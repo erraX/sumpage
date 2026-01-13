@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Sumpage",
+  "version": "1.0.0",
+  "description": "Read and summarize page content",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.svg"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "scripting"]
+}
