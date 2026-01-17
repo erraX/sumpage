@@ -3,12 +3,13 @@ import type { AISummary } from "../types";
 
 interface SidebarAppProps {
   onClose: () => void;
+  showSettings?: boolean;
 }
 
 type LoadingStep = "idle" | "extracting" | "connecting" | "complete";
 
-export function SidebarApp({ onClose }: SidebarAppProps) {
-  const [showSettings, setShowSettings] = useState(false);
+export function SidebarApp({ onClose, showSettings: initialShowSettings = false }: SidebarAppProps) {
+  const [showSettings, setShowSettings] = useState(initialShowSettings);
   const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<LoadingStep>("idle");
@@ -18,9 +19,15 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
     checkConfiguration();
   }, []);
 
-  const checkConfiguration = async () => {
+  const checkConfiguration = async (options?: { closeIfConfigured?: boolean }) => {
     const config = await getDeepSeekConfig();
-    setShowSettings(!config);
+    if (!config) {
+      setShowSettings(true);
+      return;
+    }
+    if (options?.closeIfConfigured) {
+      setShowSettings(false);
+    }
   };
 
   const extractPageContent = useCallback(async (): Promise<{ title: string; textContent: string } | null> => {
@@ -99,7 +106,7 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
               <span style={{ color: "white", fontSize: "18px", lineHeight: 1 }}>×</span>
             </button>
           </div>
-          <SidebarSettings onComplete={() => checkConfiguration()} onBack={() => setShowSettings(false)} />
+          <SidebarSettings onComplete={() => checkConfiguration({ closeIfConfigured: true })} onBack={() => setShowSettings(false)} />
         </div>
       </div>
     );
@@ -180,7 +187,7 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
 
 // Inline Settings component for sidebar
 function SidebarSettings({ onComplete, onBack }: { onComplete: () => void; onBack: () => void }) {
-  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com");
+  const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [apiKey, setApiKey] = useState("");
   const [promptTemplate, setPromptTemplate] = useState(DEFAULT_PROMPT);
   const [maxTokens, setMaxTokens] = useState("4000");
@@ -256,7 +263,7 @@ function SidebarSettings({ onComplete, onBack }: { onComplete: () => void; onBac
             type="url"
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
-            placeholder="https://api.deepseek.com"
+            placeholder="https://api.deepseek.com/v1"
             disabled={saving}
           />
         </div>
@@ -292,7 +299,7 @@ function SidebarSettings({ onComplete, onBack }: { onComplete: () => void; onBac
                 disabled={saving}
                 rows={8}
               />
-              <p style={{ fontSize: "12px", color: "#718096", margin: "8px 0 0 0" }}>
+              <p style={{ fontSize: "12px", color: "var(--sumpage-muted)", margin: "8px 0 0 0" }}>
                 Placeholders: {"{title}"} - page title, {"{content}"} - page content
               </p>
               <button className="sumpage-retry-btn" onClick={handleResetPrompt} style={{ marginTop: "8px" }}>
@@ -326,7 +333,21 @@ function SidebarSettings({ onComplete, onBack }: { onComplete: () => void; onBac
         )}
 
         {error && <div className="sumpage-error"><p>{error}</p></div>}
-        {success && <div style={{ background: "#c6f6d5", padding: "12px", borderRadius: "8px", marginBottom: "16px", textAlign: "center", color: "#276749" }}>Settings saved!</div>}
+        {success && (
+          <div
+            style={{
+              background: "var(--sumpage-success-soft)",
+              padding: "12px",
+              borderRadius: "10px",
+              marginBottom: "16px",
+              textAlign: "center",
+              color: "var(--sumpage-success)",
+              border: "1px solid var(--sumpage-border)",
+            }}
+          >
+            Settings saved!
+          </div>
+        )}
 
         <button className="sumpage-summarize-btn" onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save & Continue"}
@@ -357,13 +378,37 @@ Format your response as:
 - [key point 3]`;
 
 // Inline storage functions for sidebar
+function isChromeStorageAvailable(): boolean {
+  return !!(
+    typeof chrome !== "undefined" &&
+    chrome.storage &&
+    chrome.storage.local
+  );
+}
+
 async function getDeepSeekConfig(): Promise<any | null> {
-  if (!chrome.storage) return null;
-  const result = await chrome.storage.local.get("deepseekConfig");
-  return result.deepseekConfig || null;
+  if (!isChromeStorageAvailable()) {
+    console.log("[Sumpage] Chrome storage not available");
+    return null;
+  }
+  return new Promise((resolve) => {
+    chrome.storage.local.get("deepseekConfig", (result) => {
+      resolve(result.deepseekConfig || null);
+    });
+  });
 }
 
 async function saveDeepSeekConfig(config: any): Promise<void> {
-  if (!chrome.storage) throw new Error("Chrome storage is not available");
-  await chrome.storage.local.set({ deepseekConfig: config });
+  if (!isChromeStorageAvailable()) {
+    throw new Error("Chrome storage is not available");
+  }
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ deepseekConfig: config }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve();
+      }
+    });
+  });
 }

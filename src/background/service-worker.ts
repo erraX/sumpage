@@ -48,7 +48,8 @@ async function handleDeepSeekSummarize(
     return;
   }
 
-  console.log("[Background] Config found, baseUrl:", config.baseUrl);
+  const apiBaseUrl = normalizeBaseUrl(config.baseUrl);
+  console.log("[Background] Config found, baseUrl:", apiBaseUrl);
 
   const truncatedContent = textContent.length > MAX_CONTENT_LENGTH
     ? textContent.substring(0, MAX_CONTENT_LENGTH) + "..."
@@ -58,7 +59,7 @@ async function handleDeepSeekSummarize(
 
   try {
     console.log("[Background] Calling DeepSeek API...");
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+    const response = await fetch(`${apiBaseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +79,7 @@ async function handleDeepSeekSummarize(
       let errorMessage = `API error: ${response.status}`;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        errorMessage = errorData.message || errorData.error?.message || errorMessage;
       } catch {
         // Ignore JSON parse errors
       }
@@ -106,6 +107,14 @@ async function handleDeepSeekSummarize(
       error: err instanceof Error ? err.message : "Network error",
     });
   }
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
+  const trimmed = baseUrl.trim().replace(/\/+$/, "");
+  if (trimmed.endsWith("/v1")) {
+    return trimmed;
+  }
+  return `${trimmed}/v1`;
 }
 
 function createPrompt(template: string | undefined, title: string, content: string): string {
