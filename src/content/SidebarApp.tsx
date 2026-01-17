@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import type { AISummary } from "../types";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { AISummary, ChatMessage } from "../types";
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -14,10 +14,18 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<LoadingStep>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkConfiguration();
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const checkConfiguration = async (options?: { closeIfConfigured?: boolean }) => {
     const config = await getDeepSeekConfig();
@@ -60,6 +68,14 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       if (response.success && response.data) {
         setAiSummary(response.data);
         setLoadingStep("complete");
+        // Initialize chat with the summary as the first AI message
+        setChatMessages([
+          {
+            role: "assistant",
+            content: response.data.summary + "\n\n**Key Points:**\n" + response.data.keyPoints.map((p: string) => "- " + p).join("\n"),
+            timestamp: Date.now(),
+          },
+        ]);
       } else {
         setError(response.error || "Failed to generate summary");
         setLoadingStep("idle");
@@ -81,6 +97,64 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
     }
   }, [extractPageContent]);
 
+  const sendChatMessage = useCallback(async () => {
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: chatInput.trim(),
+      timestamp: Date.now(),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage]);
+    setChatInput("");
+    setChatLoading(true);
+    setError(null);
+
+    try {
+      const content = await extractPageContent();
+      if (!content) throw new Error("Failed to extract page content");
+
+      const response = await chrome.runtime.sendMessage({
+        type: "CHAT_WITH_AI",
+        payload: {
+          ...content,
+          message: userMessage.content,
+          history: chatMessages,
+        },
+      });
+
+      if (response.success && response.message) {
+        setChatMessages((prev) => [...prev, response.message!]);
+      } else {
+        setError(response.error || "Failed to get response");
+        // Remove user message on error
+        setChatMessages((prev) => prev.slice(0, -1));
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+      // Remove user message on error
+      setChatMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setChatLoading(false);
+    }
+  }, [chatInput, chatLoading, chatMessages, extractPageContent]);
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  };
+
+  const startNewChat = () => {
+    setAiSummary(null);
+    setChatMessages([]);
+    setError(null);
+  };
+
+  const hasChat = chatMessages.length > 0;
+
   const renderMarkdown = (content: string) => {
     // Simple markdown rendering for sidebar
     const html = content
@@ -88,7 +162,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/- (.*)/g, '<li>$1</li>')
+      .replace(/^- (.*)/gm, '<li>$1</li>')
       .replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/^(?!<)/g, '<p>')
@@ -117,6 +191,11 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       <div className="sumpage-sidebar-panel sumpage-open">
         <div className="sumpage-sidebar-header">
           <h2 className="sumpage-sidebar-title">Sumpage</h2>
+          {hasChat && (
+            <button className="sumpage-new-chat-btn" onClick={startNewChat} title="New Chat">
+              +
+            </button>
+          )}
           <button className="sumpage-close-btn" onClick={onClose}>
             <span style={{ color: "white", fontSize: "18px", lineHeight: 1 }}>×</span>
           </button>
@@ -139,13 +218,65 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
             {error && (
               <div className="sumpage-error">
                 <p>{error}</p>
-                <button className="sumpage-retry-btn" onClick={summarizeWithAI}>
-                  Retry
+                <button className="sumpage-retry-btn" onClick={aiSummary ? sendChatMessage : summarizeWithAI}>
+                  {aiSummary ? "Retry" : "Retry"}
                 </button>
               </div>
             )}
 
-            {aiSummary && !loading && !error && (
+            {/* Chat Messages */}
+            {chatMessages.length > 0 && !loading && (
+              <div className="sumpage-chat-container">
+                <div className="sumpage-chat-messages">
+                  {chatMessages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`sumpage-chat-message sumpage-chat-${msg.role}`}
+                    >
+                      <div className="sumpage-chat-role">
+                        {msg.role === "user" ? "You" : "AI"}
+                      </div>
+                      <div
+                        className="sumpage-chat-content"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                      />
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="sumpage-chat-message sumpage-chat-assistant">
+                      <div className="sumpage-chat-role">AI</div>
+                      <div className="sumpage-chat-content sumpage-typing">
+                        <span className="sumpage-typing-dot"></span>
+                        <span className="sumpage-typing-dot"></span>
+                        <span className="sumpage-typing-dot"></span>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="sumpage-chat-input-container">
+                  <textarea
+                    className="sumpage-chat-input"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask a follow-up question..."
+                    rows={1}
+                    disabled={chatLoading}
+                  />
+                  <button
+                    className="sumpage-chat-send-btn"
+                    onClick={sendChatMessage}
+                    disabled={!chatInput.trim() || chatLoading}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Initial Summary View */}
+            {aiSummary && chatMessages.length === 0 && !loading && !error && (
               <div className="sumpage-result">
                 <div className="sumpage-ai-badge">AI Generated</div>
                 <div
@@ -170,7 +301,8 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
               </div>
             )}
 
-            {!aiSummary && !loading && !error && (
+            {/* Empty State */}
+            {!aiSummary && chatMessages.length === 0 && !loading && !error && (
               <div className="sumpage-empty">
                 <p>Click the button below to summarize this page with AI</p>
                 <button className="sumpage-summarize-btn" onClick={summarizeWithAI}>

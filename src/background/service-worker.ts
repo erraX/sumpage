@@ -9,11 +9,18 @@ interface AISummary {
   keyPoints: string[];
 }
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 interface BackgroundMessage {
-  type: "SUMMARIZE_WITH_DEEPSEEK";
+  type: "SUMMARIZE_WITH_DEEPSEEK" | "CHAT_WITH_AI";
   payload: {
     title: string;
     textContent: string;
+    message?: string;
+    history?: ChatMessage[];
   };
 }
 
@@ -162,11 +169,89 @@ function parseAIResponse(content: string): { summary: string; keyPoints: string[
   return { summary, keyPoints };
 }
 
+async function handleChatWithAI(
+  payload: { title: string; textContent: string; message: string; history: ChatMessage[] },
+  sendResponse: (response: { success: boolean; message?: ChatMessage; error?: string }) => void
+) {
+  const { title, textContent, message, history } = payload;
+
+  const config = await getDeepSeekConfig();
+  if (!config) {
+    sendResponse({ success: false, error: "API not configured" });
+    return;
+  }
+
+  const apiBaseUrl = normalizeBaseUrl(config.baseUrl);
+
+  const truncatedContent = textContent.length > MAX_CONTENT_LENGTH
+    ? textContent.substring(0, MAX_CONTENT_LENGTH) + "..."
+    : textContent;
+
+  // Build messages array with system context and history
+  const messages: { role: string; content: string }[] = [
+    {
+      role: "system",
+      content: `You are analyzing a webpage titled "${title}". ${truncatedContent.substring(0, 500)}...`,
+    },
+  ];
+
+  // Add history messages (excluding system message)
+  if (history) {
+    messages.push(...history.map((m) => ({ role: m.role, content: m.content })));
+  }
+
+  // Add current user message
+  messages.push({ role: "user", content: message });
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model || "deepseek-chat",
+        messages,
+        max_tokens: config.maxTokens || 4000,
+        temperature: config.temperature || 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = `API error: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error?.message || errorMessage;
+      } catch {}
+      sendResponse({ success: false, error: errorMessage });
+      return;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+
+    sendResponse({
+      success: true,
+      message: { role: "assistant", content },
+    });
+  } catch (err) {
+    sendResponse({
+      success: false,
+      error: err instanceof Error ? err.message : "Network error",
+    });
+  }
+}
+
 // Set up message listener
 chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
   console.log("[Background] Message received:", message.type);
   if (message.type === "SUMMARIZE_WITH_DEEPSEEK") {
     handleDeepSeekSummarize(message.payload, sendResponse);
+    return true; // Keep channel open for async response
+  }
+  if (message.type === "CHAT_WITH_AI") {
+    handleChatWithAI(message.payload as any, sendResponse);
     return true; // Keep channel open for async response
   }
   return false;

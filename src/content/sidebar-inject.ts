@@ -205,6 +205,25 @@ export function injectSidebar() {
         color: var(--sumpage-muted);
         margin: 0;
       }
+      .sumpage-new-chat-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        background: var(--sumpage-accent-soft);
+        border: 1px solid var(--sumpage-border);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--sumpage-accent-strong);
+        transition: all 0.2s ease;
+      }
+      .sumpage-new-chat-btn:hover {
+        background: var(--sumpage-accent);
+        color: #f9fbfa;
+      }
       .sumpage-sidebar-header .sumpage-close-btn { display: none; }
       .sumpage-sidebar-content { padding: 0; }
 
@@ -263,6 +282,37 @@ export function injectSidebar() {
       .sumpage-input:focus { outline: none; border-color: var(--sumpage-accent); box-shadow: 0 0 0 3px rgba(47, 111, 106, 0.18); }
       .sumpage-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--sumpage-border); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; background: #fbfbfa; }
       .sumpage-textarea:focus { outline: none; border-color: var(--sumpage-accent); box-shadow: 0 0 0 3px rgba(47, 111, 106, 0.18); }
+
+      /* Chat */
+      .sumpage-chat-container { display: flex; flex-direction: column; height: calc(100vh - 100px); max-height: 600px; }
+      .sumpage-chat-messages { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+      .sumpage-chat-message { margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; max-width: 92%; }
+      .sumpage-chat-user { background: var(--sumpage-accent); color: #f9fbfa; margin-left: auto; border-bottom-right-radius: 4px; }
+      .sumpage-chat-assistant { background: var(--sumpage-surface); border: 1px solid var(--sumpage-border); margin-right: auto; border-bottom-left-radius: 4px; }
+      .sumpage-chat-role { font-size: 11px; font-weight: 600; margin-bottom: 6px; opacity: 0.7; }
+      .sumpage-chat-user .sumpage-chat-role { color: rgba(249, 251, 250, 0.8); }
+      .sumpage-chat-assistant .sumpage-chat-role { color: var(--sumpage-accent); }
+      .sumpage-chat-content { font-size: 14px; line-height: 1.5; }
+      .sumpage-chat-content p { margin: 0 0 8px 0; }
+      .sumpage-chat-content p:last-child { margin-bottom: 0; }
+      .sumpage-chat-content ul { margin: 8px 0; padding-left: 18px; }
+      .sumpage-chat-content li { margin-bottom: 4px; }
+
+      /* Chat input */
+      .sumpage-chat-input-container { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--sumpage-border); margin-top: auto; }
+      .sumpage-chat-input { flex: 1; padding: 10px 12px; border: 1px solid var(--sumpage-border); border-radius: 12px; font-size: 14px; font-family: inherit; resize: none; background: var(--sumpage-surface); }
+      .sumpage-chat-input:focus { outline: none; border-color: var(--sumpage-accent); }
+      .sumpage-chat-send-btn { width: 40px; height: 40px; border: none; border-radius: 12px; background: var(--sumpage-accent); color: #f9fbfa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s ease; }
+      .sumpage-chat-send-btn:hover:not(:disabled) { background: var(--sumpage-accent-strong); transform: scale(1.02); }
+      .sumpage-chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* Typing animation */
+      .sumpage-typing { display: flex; gap: 4px; padding: 4px 0; }
+      .sumpage-typing-dot { width: 6px; height: 6px; background: var(--sumpage-muted); border-radius: 50%; animation: sumpage-typing 1.4s infinite ease-in-out; }
+      .sumpage-typing-dot:nth-child(1) { animation-delay: 0s; }
+      .sumpage-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+      .sumpage-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes sumpage-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.6; } 30% { transform: translateY(-4px); opacity: 1; } }
     `;
     panelShadow.appendChild(panelStyle);
 

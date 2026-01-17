@@ -12,6 +12,18 @@ export interface AISummary {
   keyPoints: string[];
 }
 
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export interface ChatResponse {
+  success: boolean;
+  message?: ChatMessage;
+  error?: string;
+}
+
 export interface PageSummary {
   title: string;
   textContent: string;
@@ -32,10 +44,12 @@ export interface ContentScriptMessage {
 }
 
 export interface BackgroundMessage {
-  type: "SUMMARIZE_WITH_DEEPSEEK";
+  type: "SUMMARIZE_WITH_DEEPSEEK" | "CHAT_WITH_AI";
   payload: {
     title: string;
     textContent: string;
+    message: string;
+    history?: ChatMessage[];
   };
 }
 
