@@ -38,3 +38,10 @@ export interface BackgroundMessage {
     textContent: string;
   };
 }
+
+// Window interface extension for global properties
+declare global {
+  interface Window {
+    sumpageInjected?: boolean;
+  }
+}

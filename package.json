@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && cp dist/src/popup/index.html dist/popup.html && sed -i '' 's|../../popup.js|popup.js|g' dist/popup.html && sed -i '' 's|../../popup.css|popup.css|g' dist/popup.html && rm -rf dist/src",
+    "build": "tsc && vite build && node build-content.mjs && rm -rf dist/src",
     "test": "vitest",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -23,6 +23,7 @@
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "@vitejs/plugin-react": "^4.3.3",
+    "esbuild": "^0.27.2",
     "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.2.0",
