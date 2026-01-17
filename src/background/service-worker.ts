@@ -152,16 +152,29 @@ Format your response as:
 }
 
 function parseAIResponse(content: string): { summary: string; keyPoints: string[] } {
-  const summaryMatch = content.match(/## Summary\s*\n([\s\S]*?)(?=## Key Points|$)/i);
-  const keyPointsMatch = content.match(/## Key Points\s*\n([\s\S]*)/i);
+  const summaryHeading = "(?:Summary|摘要|概要|总结)";
+  const keyPointsHeading = "(?:Key\\s*Points?|关键点|要点|关键要点)";
+  const summaryRegex = new RegExp(`##\\s*${summaryHeading}\\s*\\n([\\s\\S]*?)(?=##\\s*${keyPointsHeading}|$)`, "i");
+  const keyPointsRegex = new RegExp(`##\\s*${keyPointsHeading}\\s*\\n([\\s\\S]*)`, "i");
 
-  const summary = summaryMatch
-    ? summaryMatch[1].trim().replace(/\n+/g, " ")
-    : content.substring(0, 500);
+  const summaryMatch = content.match(summaryRegex);
+  const keyPointsMatch = content.match(keyPointsRegex);
+
+  let summary = "";
+  if (summaryMatch) {
+    summary = summaryMatch[1].trim().replace(/\n+/g, " ");
+  } else if (keyPointsMatch && typeof keyPointsMatch.index === "number") {
+    const beforeKeyPoints = content.slice(0, keyPointsMatch.index).trim();
+    summary = beforeKeyPoints.replace(/^##\s*[^\n]+\n/i, "").trim().replace(/\n+/g, " ");
+  } else {
+    summary = content.substring(0, 500);
+  }
 
   const keyPoints = keyPointsMatch
     ? keyPointsMatch[1].trim().split("\n")
-        .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)、])\s*/, "").trim())
         .filter(Boolean)
         .slice(0, 5)
     : [];

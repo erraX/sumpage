@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { marked } from "marked";
 import type { AISummary, ChatMessage } from "../types";
 
 interface SidebarAppProps {
@@ -7,6 +8,11 @@ interface SidebarAppProps {
 }
 
 type LoadingStep = "idle" | "extracting" | "connecting" | "complete";
+
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
 
 export function SidebarApp({ onClose, showSettings: initialShowSettings = false }: SidebarAppProps) {
   const [showSettings, setShowSettings] = useState(initialShowSettings);
@@ -17,14 +23,35 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentTitle, setCurrentTitle] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkConfiguration();
+    loadChatHistoryIfExists();
   }, []);
 
+  const loadChatHistoryIfExists = async () => {
+    const url = window.location.href;
+    const title = document.title || "Untitled";
+    const history = await getChatHistory(url);
+    if (history && history.length > 0) {
+      setCurrentUrl(url);
+      setCurrentTitle(title);
+      setChatMessages(history);
+      setLoadingStep("complete");
+      // Parse summary and keyPoints from first assistant message
+      const firstMsg = history.find(m => m.role === "assistant");
+      if (firstMsg) {
+        const { summary, keyPoints } = parseSummaryFromContent(firstMsg.content);
+        setAiSummary({ summary, keyPoints });
+      }
+    }
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [chatMessages]);
 
   const checkConfiguration = async (options?: { closeIfConfigured?: boolean }) => {
@@ -38,11 +65,12 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
     }
   };
 
-  const extractPageContent = useCallback(async (): Promise<{ title: string; textContent: string } | null> => {
+  const extractPageContent = useCallback(async (): Promise<{ title: string; url: string; textContent: string } | null> => {
     const title = document.title || "Untitled";
+    const url = window.location.href;
     const textContent = document.body?.innerText || "";
     const cleanedText = textContent.replace(/\s+/g, " ").replace(/[\r\n]+/g, ". ").trim();
-    return { title, textContent: cleanedText };
+    return { title, url, textContent: cleanedText };
   }, []);
 
   const summarizeWithAI = useCallback(async () => {
@@ -53,6 +81,26 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
     setLoadingStep("extracting");
     setError(null);
 
+    // Store URL and title for chat history
+    setCurrentUrl(content.url);
+    setCurrentTitle(content.title);
+
+    // Check for existing chat history
+    const existingHistory = await getChatHistory(content.url);
+    if (existingHistory && existingHistory.length > 0) {
+      // Load existing chat
+      setChatMessages(existingHistory);
+      setLoading(false);
+      setLoadingStep("complete");
+      // Parse summary and keyPoints from first assistant message
+      const firstMsg = existingHistory.find(m => m.role === "assistant");
+      if (firstMsg) {
+        const { summary, keyPoints } = parseSummaryFromContent(firstMsg.content);
+        setAiSummary({ summary, keyPoints });
+      }
+      return;
+    }
+
     try {
       setLoadingStep("connecting");
 
@@ -62,20 +110,23 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
 
       const response = await chrome.runtime.sendMessage({
         type: "SUMMARIZE_WITH_DEEPSEEK",
-        payload: content,
+        payload: { title: content.title, textContent: content.textContent },
       });
 
       if (response.success && response.data) {
         setAiSummary(response.data);
         setLoadingStep("complete");
         // Initialize chat with the summary as the first AI message
-        setChatMessages([
+        const initialMessages: ChatMessage[] = [
           {
             role: "assistant",
             content: response.data.summary + "\n\n**Key Points:**\n" + response.data.keyPoints.map((p: string) => "- " + p).join("\n"),
             timestamp: Date.now(),
           },
-        ]);
+        ];
+        setChatMessages(initialMessages);
+        // Save to storage
+        await saveChatHistory(content.url, content.title, initialMessages);
       } else {
         setError(response.error || "Failed to generate summary");
         setLoadingStep("idle");
@@ -99,6 +150,10 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
 
   const sendChatMessage = useCallback(async () => {
     if (!chatInput.trim() || chatLoading) return;
+    if (!currentUrl) {
+      setError("No page URL found");
+      return;
+    }
 
     const userMessage: ChatMessage = {
       role: "user",
@@ -106,7 +161,8 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       timestamp: Date.now(),
     };
 
-    setChatMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...chatMessages, userMessage];
+    setChatMessages(updatedMessages);
     setChatInput("");
     setChatLoading(true);
     setError(null);
@@ -118,14 +174,18 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       const response = await chrome.runtime.sendMessage({
         type: "CHAT_WITH_AI",
         payload: {
-          ...content,
+          title: content.title,
+          textContent: content.textContent,
           message: userMessage.content,
           history: chatMessages,
         },
       });
 
       if (response.success && response.message) {
-        setChatMessages((prev) => [...prev, response.message!]);
+        const messagesWithResponse = [...updatedMessages, response.message!];
+        setChatMessages(messagesWithResponse);
+        // Save to storage
+        await saveChatHistory(currentUrl, currentTitle, messagesWithResponse);
       } else {
         setError(response.error || "Failed to get response");
         // Remove user message on error
@@ -138,7 +198,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
     } finally {
       setChatLoading(false);
     }
-  }, [chatInput, chatLoading, chatMessages, extractPageContent]);
+  }, [chatInput, chatLoading, chatMessages, extractPageContent, currentUrl, currentTitle]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -151,23 +211,104 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
     setAiSummary(null);
     setChatMessages([]);
     setError(null);
+    // Clear chat history for current URL
+    if (currentUrl) {
+      clearChatHistory(currentUrl);
+    }
   };
 
   const hasChat = chatMessages.length > 0;
 
-  const renderMarkdown = (content: string) => {
-    // Simple markdown rendering for sidebar
-    const html = content
-      .replace(/##\s+(.*)/g, '<h3>$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/^- (.*)/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/^(?!<)/g, '<p>')
-      .replace(/(?!>)$/g, '</p>');
-    return html;
+  const sanitizeHtml = (html: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const allowedTags = new Set([
+      "p",
+      "br",
+      "strong",
+      "em",
+      "code",
+      "pre",
+      "ul",
+      "ol",
+      "li",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "blockquote",
+      "a",
+      "span",
+    ]);
+    const allowedAttrs = new Set(["href", "target", "rel"]);
+
+    const elements = Array.from(doc.body.querySelectorAll("*"));
+    for (const el of elements) {
+      const tag = el.tagName.toLowerCase();
+      if (!allowedTags.has(tag)) {
+        const parent = el.parentNode;
+        if (parent) {
+          while (el.firstChild) {
+            parent.insertBefore(el.firstChild, el);
+          }
+          parent.removeChild(el);
+        }
+        continue;
+      }
+
+      for (const attr of Array.from(el.attributes)) {
+        if (!allowedAttrs.has(attr.name)) {
+          el.removeAttribute(attr.name);
+        }
+      }
+
+      if (tag === "a") {
+        const href = el.getAttribute("href") || "";
+        let isSafe = false;
+        try {
+          const url = new URL(href, window.location.href);
+          isSafe = url.protocol === "http:" || url.protocol === "https:";
+        } catch {
+          isSafe = false;
+        }
+        if (!isSafe) {
+          el.removeAttribute("href");
+        } else {
+          el.setAttribute("target", "_blank");
+          el.setAttribute("rel", "noopener noreferrer");
+        }
+      }
+    }
+
+    return doc.body.innerHTML;
+  };
+
+  const renderMarkdown = (content: string) =>
+    sanitizeHtml(marked.parse(content, { async: false }) as string);
+  const renderInlineMarkdown = (content: string) =>
+    sanitizeHtml(marked.parseInline(content, { async: false }) as string);
+
+  // Parse summary and keyPoints from chat message content
+  const parseSummaryFromContent = (content: string): { summary: string; keyPoints: string[] } => {
+    const keyPointsHeading = /^\s*(?:#{1,6}\s*)?(?:\*\*)?\s*(?:关键要点|关键点|Key Points?)\s*(?:\*\*)?\s*:?\s*$/im;
+    const keyPointsMatch = content.match(keyPointsHeading);
+
+    if (keyPointsMatch && typeof keyPointsMatch.index === "number") {
+      const summaryPart = content.substring(0, keyPointsMatch.index).trim();
+      const afterHeading = content.slice(keyPointsMatch.index + keyPointsMatch[0].length);
+      const keyPointsText = afterHeading.replace(/^[\r\n\s]+/, "");
+
+      const keyPoints = keyPointsText
+        .split("\n")
+        .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+        .filter((line) => line.length > 0 && line.length < 200)
+        .slice(0, 10);
+
+      return { summary: summaryPart, keyPoints };
+    }
+
+    // No key points section found, return entire content as summary
+    return { summary: content, keyPoints: [] };
   };
 
   if (showSettings) {
@@ -288,7 +429,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
                     <h3>Key Points</h3>
                     <ul className="sumpage-key-points">
                       {aiSummary.keyPoints.map((point, index) => (
-                        <li key={index} dangerouslySetInnerHTML={{ __html: renderMarkdown(point) }} />
+                        <li key={index} dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(point) }} />
                       ))}
                     </ul>
                   </div>
@@ -541,6 +682,58 @@ async function saveDeepSeekConfig(config: any): Promise<void> {
       } else {
         resolve();
       }
+    });
+  });
+}
+
+// Chat history storage functions
+async function getChatHistory(url: string): Promise<ChatMessage[] | null> {
+  if (!isChromeStorageAvailable()) {
+    return null;
+  }
+  return new Promise((resolve) => {
+    chrome.storage.local.get("chatHistory", (result: any) => {
+      const history = result.chatHistory || {};
+      resolve(history[url]?.messages || null);
+    });
+  });
+}
+
+async function saveChatHistory(url: string, title: string, messages: ChatMessage[]): Promise<void> {
+  if (!isChromeStorageAvailable()) {
+    throw new Error("Chrome storage is not available");
+  }
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get("chatHistory", (result: any) => {
+      const history = result.chatHistory || {};
+      history[url] = {
+        url,
+        title,
+        messages,
+        lastUpdated: Date.now(),
+      };
+      chrome.storage.local.set({ chatHistory: history }, () => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
+}
+
+async function clearChatHistory(url: string): Promise<void> {
+  if (!isChromeStorageAvailable()) {
+    return;
+  }
+  return new Promise((resolve) => {
+    chrome.storage.local.get("chatHistory", (result: any) => {
+      const history = result.chatHistory || {};
+      delete history[url];
+      chrome.storage.local.set({ chatHistory: history }, () => {
+        resolve();
+      });
     });
   });
 }
