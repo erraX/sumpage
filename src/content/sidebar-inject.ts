@@ -373,12 +373,14 @@ export function injectSidebar() {
       .sumpage-markdown-section { margin-bottom: 16px; }
       .sumpage-markdown-section:last-child { margin-bottom: 0; }
       .sumpage-markdown-section h3 { font-size: 14px; font-weight: 600; color: var(--sumpage-ink); margin: 0 0 10px 0; }
-      .sumpage-markdown-content { font-size: 14px; line-height: 1.6; color: var(--sumpage-muted); }
+      .sumpage-markdown-content { font-size: 14px; line-height: 1.6; color: var(--sumpage-muted); overflow-wrap: anywhere; word-break: break-word; }
       .sumpage-markdown-content p { margin: 0 0 10px 0; }
       .sumpage-markdown-content p:last-child { margin-bottom: 0; }
       .sumpage-markdown-content h1, .sumpage-markdown-content h2, .sumpage-markdown-content h3, .sumpage-markdown-content h4 { color: var(--sumpage-ink); margin: 16px 0 8px 0; }
       .sumpage-markdown-content ul, .sumpage-markdown-content ol { margin: 10px 0; padding-left: 20px; }
       .sumpage-markdown-content li { margin-bottom: 6px; }
+      .sumpage-markdown-content pre { margin: 10px 0; padding: 10px 12px; background: #f0f2f1; border: 1px solid var(--sumpage-border); border-radius: 10px; white-space: pre-wrap; overflow-x: auto; max-width: 100%; }
+      .sumpage-markdown-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
 
       /* Key Points */
       .sumpage-key-points { list-style: none; padding: 0; margin: 0; }
@@ -391,18 +393,135 @@ export function injectSidebar() {
       .sumpage-refresh-btn:hover { background: #d4e7e4; }
 
       /* Empty */
-      .sumpage-empty { text-align: center; padding: 40px 20px; }
-      .sumpage-empty p { color: var(--sumpage-muted); font-size: 14px; margin: 0 0 16px 0; }
+      .sumpage-empty { text-align: left; padding: 24px 16px 32px; }
+      .sumpage-empty p { color: var(--sumpage-muted); font-size: 12px; margin: 6px 0 0; }
       .sumpage-summarize-btn { width: 100%; background: linear-gradient(160deg, #2f6f6a 0%, #3b837f 100%); color: #f9fbfa; border: none; padding: 12px 20px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 8px 16px rgba(22, 52, 50, 0.25); }
       .sumpage-summarize-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(22, 52, 50, 0.3); }
       .sumpage-summarize-btn:active { transform: translateY(0); }
+
+      .sumpage-prompt-panel {
+        position: relative;
+        padding: 16px;
+        border: 1px solid var(--sumpage-border);
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f3f7f5 100%);
+        box-shadow: 0 10px 22px rgba(22, 52, 50, 0.08);
+        overflow: hidden;
+      }
+      .sumpage-prompt-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(120px 120px at 10% 0, rgba(47, 111, 106, 0.12), transparent 60%),
+          radial-gradient(160px 160px at 100% 10%, rgba(47, 111, 106, 0.08), transparent 60%);
+        pointer-events: none;
+      }
+      .sumpage-prompt-panel > * { position: relative; }
+
+      .sumpage-prompt-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .sumpage-prompt-header h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--sumpage-ink); }
+      .sumpage-prompt-header p { margin: 4px 0 0; font-size: 12px; color: var(--sumpage-muted); }
+      .sumpage-prompt-count {
+        background: var(--sumpage-accent-soft);
+        color: var(--sumpage-accent-strong);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .sumpage-prompt-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .sumpage-prompt-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid #d5e2de;
+        background: #f2f6f4;
+        color: var(--sumpage-muted);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+      }
+      .sumpage-prompt-tab:hover:not(:disabled) { background: #e8f1ee; transform: translateY(-1px); }
+      .sumpage-prompt-tab.is-active {
+        background: var(--sumpage-accent);
+        color: #f9fbfa;
+        border-color: transparent;
+        box-shadow: 0 10px 18px rgba(47, 111, 106, 0.25);
+      }
+      .sumpage-prompt-tab:disabled { opacity: 0.6; cursor: not-allowed; }
+      .sumpage-prompt-tab-badge {
+        background: rgba(47, 111, 106, 0.12);
+        color: var(--sumpage-accent-strong);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 999px;
+      }
+      .sumpage-prompt-tab.is-active .sumpage-prompt-tab-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: #f9fbfa;
+      }
+
+      .sumpage-prompt-editor {
+        background: #fbfbfa;
+        border: 1px solid var(--sumpage-border);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+        margin-bottom: 14px;
+      }
+      .sumpage-prompt-editor-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .sumpage-prompt-editor-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--sumpage-muted);
+      }
+      .sumpage-prompt-editor-hint { font-size: 11px; color: var(--sumpage-muted); }
+      .sumpage-prompt-textarea {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        resize: vertical;
+        min-height: 140px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--sumpage-ink);
+      }
+      .sumpage-prompt-send { margin-top: 6px; }
 
       /* Settings form */
       .sumpage-form-group { margin-bottom: 16px; }
       .sumpage-label { display: block; font-size: 13px; font-weight: 600; color: var(--sumpage-muted); margin-bottom: 6px; letter-spacing: 0.01em; }
       .sumpage-input { width: 100%; padding: 10px 12px; border: 1px solid var(--sumpage-border); border-radius: 10px; font-size: 14px; transition: border-color 0.2s ease, box-shadow 0.2s ease; background: #fbfbfa; }
       .sumpage-input:focus { outline: none; border-color: var(--sumpage-accent); box-shadow: 0 0 0 3px rgba(47, 111, 106, 0.18); }
-      .sumpage-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--sumpage-border); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; background: #fbfbfa; }
+      .sumpage-textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--sumpage-border); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; background: #fbfbfa; min-height: 120px; max-height: 300px; }
       .sumpage-textarea:focus { outline: none; border-color: var(--sumpage-accent); box-shadow: 0 0 0 3px rgba(47, 111, 106, 0.18); }
 
       /* Chat */
@@ -411,21 +530,52 @@ export function injectSidebar() {
       .sumpage-chat-messages::-webkit-scrollbar { width: 10px; }
       .sumpage-chat-messages::-webkit-scrollbar-track { background: #efe9e1; }
       .sumpage-chat-messages::-webkit-scrollbar-thumb { background: #c6d5d0; border-radius: 999px; border: 2px solid #efe9e1; }
-      .sumpage-chat-message { margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; max-width: 92%; }
+      .sumpage-chat-message { margin-bottom: 12px; padding: 12px 14px; border-radius: 12px; max-width: 92%; overflow: hidden; }
       .sumpage-chat-user { background: var(--sumpage-accent); color: #f9fbfa; margin-left: auto; border-bottom-right-radius: 4px; }
       .sumpage-chat-assistant { background: var(--sumpage-surface); border: 1px solid var(--sumpage-border); margin-right: auto; border-bottom-left-radius: 4px; }
       .sumpage-chat-role { font-size: 11px; font-weight: 600; margin-bottom: 6px; opacity: 0.7; }
       .sumpage-chat-user .sumpage-chat-role { color: rgba(249, 251, 250, 0.8); }
       .sumpage-chat-assistant .sumpage-chat-role { color: var(--sumpage-accent); }
-      .sumpage-chat-content { font-size: 14px; line-height: 1.5; }
+      .sumpage-chat-content { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; word-break: break-word; }
       .sumpage-chat-content p { margin: 0 0 8px 0; }
       .sumpage-chat-content p:last-child { margin-bottom: 0; }
       .sumpage-chat-content ul { margin: 8px 0; padding-left: 18px; }
       .sumpage-chat-content li { margin-bottom: 4px; }
+      .sumpage-chat-content pre { margin: 8px 0; padding: 10px 12px; background: #f0f2f1; border: 1px solid var(--sumpage-border); border-radius: 10px; white-space: pre-wrap; overflow-x: auto; max-width: 100%; }
+      .sumpage-chat-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+
+      .sumpage-chat-prompt {
+        margin: 8px 0 12px;
+        padding: 10px;
+        border: 1px solid var(--sumpage-border);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.75);
+      }
+      .sumpage-chat-prompt-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .sumpage-chat-prompt-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--sumpage-muted);
+      }
+      .sumpage-chat-prompt-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--sumpage-accent-strong);
+      }
+      .sumpage-chat-prompt .sumpage-prompt-tabs { margin-bottom: 0; }
+      .sumpage-chat-prompt .sumpage-prompt-tab { font-size: 11px; padding: 5px 10px; }
 
       /* Chat input */
       .sumpage-chat-input-container { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--sumpage-border); margin-top: auto; }
-      .sumpage-chat-input { flex: 1; padding: 10px 12px; border: 1px solid var(--sumpage-border); border-radius: 12px; font-size: 14px; font-family: inherit; resize: none; background: var(--sumpage-surface); color: var(--sumpage-ink); }
+      .sumpage-chat-input { flex: 1; padding: 12px 14px; border: 1px solid var(--sumpage-border); border-radius: 12px; font-size: 14px; font-family: inherit; resize: vertical; background: var(--sumpage-surface); color: var(--sumpage-ink); min-height: 48px; max-height: 150px; }
       .sumpage-chat-input::placeholder { color: var(--sumpage-muted); }
       .sumpage-chat-input:focus { outline: none; border-color: var(--sumpage-accent); }
       .sumpage-chat-send-btn { width: 40px; height: 40px; border: none; border-radius: 12px; background: var(--sumpage-accent); color: #f9fbfa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s ease; }

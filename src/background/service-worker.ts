@@ -14,6 +14,15 @@ interface ChatMessage {
   content: string;
 }
 
+interface PromptTemplate {
+  id: string;
+  name: string;
+  template: string;
+  isDefault: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 interface BackgroundMessage {
   type: "SUMMARIZE_WITH_DEEPSEEK" | "CHAT_WITH_AI";
   payload: {
@@ -21,6 +30,8 @@ interface BackgroundMessage {
     textContent: string;
     message?: string;
     history?: ChatMessage[];
+    promptId?: string;
+    promptTemplate?: string;
   };
 }
 
@@ -30,7 +41,6 @@ interface DeepSeekConfig {
   model?: string;
   maxTokens?: number;
   temperature?: number;
-  promptTemplate?: string;
 }
 
 async function getDeepSeekConfig(): Promise<DeepSeekConfig | null> {
@@ -41,11 +51,63 @@ async function getDeepSeekConfig(): Promise<DeepSeekConfig | null> {
   });
 }
 
+async function getPromptTemplates(): Promise<PromptTemplate[]> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("promptTemplates", (result) => {
+      resolve(result.promptTemplates || []);
+    });
+  });
+}
+
+async function getPromptById(id: string): Promise<PromptTemplate | null> {
+  const templates = await getPromptTemplates();
+  return templates.find(t => t.id === id) || null;
+}
+
+const DEFAULT_PROMPT = `Please summarize the following webpage content:
+
+Title: {title}
+
+Content:
+{content}
+
+Please provide:
+1. A concise summary (2-3 paragraphs)
+2. 3-5 key points as bullet points
+
+Format your response as:
+## Summary
+[your summary here]
+
+## Key Points
+- [key point 1]
+- [key point 2]
+- [key point 3]`;
+
+async function resolvePromptTemplate(
+  promptId: string | undefined,
+  inlineTemplate: string | undefined
+): Promise<string> {
+  // Priority: inline template > prompt ID > default prompt
+  if (inlineTemplate) {
+    return inlineTemplate;
+  }
+
+  if (promptId) {
+    const prompt = await getPromptById(promptId);
+    if (prompt) {
+      return prompt.template;
+    }
+  }
+
+  return DEFAULT_PROMPT;
+}
+
 async function handleDeepSeekSummarize(
-  payload: { title: string; textContent: string },
+  payload: { title: string; textContent: string; promptId?: string; promptTemplate?: string },
   sendResponse: (response: { success: boolean; data?: AISummary; error?: string }) => void
 ) {
-  const { title, textContent } = payload;
+  const { title, textContent, promptId, promptTemplate } = payload;
   console.log("[Background] Processing request for:", title);
 
   const config = await getDeepSeekConfig();
@@ -62,7 +124,8 @@ async function handleDeepSeekSummarize(
     ? textContent.substring(0, MAX_CONTENT_LENGTH) + "..."
     : textContent;
 
-  const prompt = createPrompt(config.promptTemplate, title, truncatedContent);
+  const template = await resolvePromptTemplate(promptId, promptTemplate);
+  const prompt = createPrompt(template, title, truncatedContent);
 
   try {
     console.log("[Background] Calling DeepSeek API...");
@@ -99,13 +162,13 @@ async function handleDeepSeekSummarize(
     const content = data.choices?.[0]?.message?.content || "";
     console.log("[Background] Response content length:", content.length);
 
-    const { summary, keyPoints } = parseAIResponse(content);
+    const summary = content.trim();
 
     console.log("[Background] Success, summary length:", summary.length);
 
     sendResponse({
       success: true,
-      data: { summary, keyPoints },
+      data: { summary, keyPoints: [] },
     });
   } catch (err) {
     console.error("[Background] Network error:", err);
@@ -124,69 +187,17 @@ function normalizeBaseUrl(baseUrl: string): string {
   return `${trimmed}/v1`;
 }
 
-function createPrompt(template: string | undefined, title: string, content: string): string {
-  const defaultTemplate = `Please summarize the following webpage content:
-
-Title: {title}
-
-Content:
-{content}
-
-Please provide:
-1. A concise summary (2-3 paragraphs)
-2. 3-5 key points as bullet points
-
-Format your response as:
-## Summary
-[your summary here]
-
-## Key Points
-- [key point 1]
-- [key point 2]
-- [key point 3]`;
-
-  const promptTemplate = template || defaultTemplate;
-  return promptTemplate
+function createPrompt(template: string, title: string, content: string): string {
+  return template
     .replace(/{title}/g, title)
     .replace(/{content}/g, content);
 }
 
-function parseAIResponse(content: string): { summary: string; keyPoints: string[] } {
-  const summaryHeading = "(?:Summary|摘要|概要|总结)";
-  const keyPointsHeading = "(?:Key\\s*Points?|关键点|要点|关键要点)";
-  const summaryRegex = new RegExp(`##\\s*${summaryHeading}\\s*\\n([\\s\\S]*?)(?=##\\s*${keyPointsHeading}|$)`, "i");
-  const keyPointsRegex = new RegExp(`##\\s*${keyPointsHeading}\\s*\\n([\\s\\S]*)`, "i");
-
-  const summaryMatch = content.match(summaryRegex);
-  const keyPointsMatch = content.match(keyPointsRegex);
-
-  let summary = "";
-  if (summaryMatch) {
-    summary = summaryMatch[1].trim().replace(/\n+/g, " ");
-  } else if (keyPointsMatch && typeof keyPointsMatch.index === "number") {
-    const beforeKeyPoints = content.slice(0, keyPointsMatch.index).trim();
-    summary = beforeKeyPoints.replace(/^##\s*[^\n]+\n/i, "").trim().replace(/\n+/g, " ");
-  } else {
-    summary = content.substring(0, 500);
-  }
-
-  const keyPoints = keyPointsMatch
-    ? keyPointsMatch[1].trim().split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)、])\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, 5)
-    : [];
-
-  return { summary, keyPoints };
-}
-
 async function handleChatWithAI(
-  payload: { title: string; textContent: string; message: string; history: ChatMessage[] },
+  payload: { title: string; textContent: string; message: string; history: ChatMessage[]; promptId?: string; promptTemplate?: string },
   sendResponse: (response: { success: boolean; message?: ChatMessage; error?: string }) => void
 ) {
-  const { title, textContent, message, history } = payload;
+  const { title, textContent, message, history, promptId, promptTemplate } = payload;
 
   const config = await getDeepSeekConfig();
   if (!config) {
@@ -200,11 +211,14 @@ async function handleChatWithAI(
     ? textContent.substring(0, MAX_CONTENT_LENGTH) + "..."
     : textContent;
 
+  // Resolve the prompt template for context
+  const template = await resolvePromptTemplate(promptId, promptTemplate);
+
   // Build messages array with system context and history
   const messages: { role: string; content: string }[] = [
     {
       role: "system",
-      content: `You are analyzing a webpage titled "${title}". ${truncatedContent.substring(0, 500)}...`,
+      content: `You are analyzing a webpage titled "${title}". Follow these instructions for your response:\n\n${template}\n\nPage content excerpt:\n${truncatedContent.substring(0, 500)}...`,
     },
   ];
 
