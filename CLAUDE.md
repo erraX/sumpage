@@ -45,3 +45,4 @@ The `dist/` folder contains the loadable Chrome extension:
 - `icon.svg` - Extension icon
 
 To load: Open `chrome://extensions`, enable developer mode, "Load unpacked" and select `dist/`.
+Use 'bd' for task tracking

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { KeyboardEvent } from "react";
 import type { AISummary, ChatMessage } from "../types";
-import type { LoadingStep } from "./types";
 import {
   getDeepSeekConfig,
   initializePromptTemplates,
@@ -19,7 +18,6 @@ import { ChatView } from "./components/ChatView";
 import { SummaryView } from "./components/SummaryView";
 import { EmptyState } from "./components/EmptyState";
 import { renderInlineMarkdown, renderMarkdown } from "./utils/markdown";
-import { parseSummaryFromContent } from "./utils/summaryParser";
 import { clearChatHistory, getChatHistory, saveChatHistory } from "./utils/chatHistory";
 
 interface SidebarAppProps {
@@ -31,7 +29,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
   const [showSettings, setShowSettings] = useState(initialShowSettings);
   const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<LoadingStep>("idle");
+  const [loadingStep, setLoadingStep] = useState<"idle" | "extracting" | "connecting" | "complete">("idle");
   const [error, setError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -62,8 +60,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       // Parse summary and keyPoints from first assistant message
       const firstMsg = history.find(m => m.role === "assistant");
       if (firstMsg) {
-        const { summary, keyPoints } = parseSummaryFromContent(firstMsg.content);
-        setAiSummary({ summary, keyPoints });
+        setAiSummary({ summary: firstMsg.content, keyPoints: [] });
       }
     }
   };
@@ -132,8 +129,7 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
       // Parse summary and keyPoints from first assistant message
       const firstMsg = existingHistory.find(m => m.role === "assistant");
       if (firstMsg) {
-        const { summary, keyPoints } = parseSummaryFromContent(firstMsg.content);
-        setAiSummary({ summary, keyPoints });
+        setAiSummary({ summary: firstMsg.content, keyPoints: [] });
       }
       return;
     }

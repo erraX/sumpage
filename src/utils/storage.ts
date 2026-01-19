@@ -27,13 +27,6 @@ export async function saveDeepSeekConfig(config: DeepSeekConfig): Promise<void> 
   });
 }
 
-export async function clearDeepSeekConfig(): Promise<void> {
-  if (!isChromeStorageAvailable()) {
-    return;
-  }
-  await chrome.storage.local.remove(STORAGE_KEYS.DEEPSEEK_CONFIG);
-}
-
 // Prompt template functions
 export async function getPromptTemplates(): Promise<PromptTemplate[]> {
   if (!isChromeStorageAvailable()) return [];

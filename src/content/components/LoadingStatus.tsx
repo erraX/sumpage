@@ -1,7 +1,5 @@
-import type { LoadingStep } from "../types";
-
 interface LoadingStatusProps {
-  step: LoadingStep;
+  step: "idle" | "extracting" | "connecting" | "complete";
 }
 
 export function LoadingStatus({ step }: LoadingStatusProps) {
