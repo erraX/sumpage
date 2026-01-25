@@ -4,11 +4,13 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
-  base: "./",
   build: {
+    outDir: "dist",
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         background: resolve(__dirname, "src/background/service-worker.ts"),
+        sidebar: resolve(__dirname, "src/content/content.tsx"),
       },
       output: {
         entryFileNames: "[name].js",

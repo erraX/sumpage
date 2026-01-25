@@ -827,15 +827,15 @@ export const PromptItemActions = styled.div`
   gap: 4px;
 `;
 
-export const PromptItemButton = styled.button<{ $danger?: boolean }>`
+export const PromptItemButton = styled.button<{ $danger?: boolean; $confirming?: boolean }>`
   font-size: 11px;
   padding: 4px 8px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: ${props => props.$danger ? theme.warningBg : theme.accentSoft};
-  color: ${props => props.$danger ? theme.warningText : theme.accentStrong};
+  background: ${props => props.$confirming ? theme.warningBorder : props.$danger ? theme.warningBg : theme.accentSoft};
+  color: ${props => props.$confirming ? theme.warningText : props.$danger ? theme.warningText : theme.accentStrong};
 
   &:hover {
     background: ${props => props.$danger ? theme.warningBorder : theme.accent};

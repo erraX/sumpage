@@ -1,47 +1,15 @@
 // Service worker for Sumpage extension
+import type {
+  AISummary,
+  ChatMessage,
+  PromptTemplate,
+  BackgroundMessage,
+  DeepSeekConfig,
+} from "../types";
 
 const MAX_CONTENT_LENGTH = 12000;
 
 console.log("[Background] Service worker starting...");
-
-interface AISummary {
-  summary: string;
-  keyPoints: string[];
-}
-
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
-interface PromptTemplate {
-  id: string;
-  name: string;
-  template: string;
-  isDefault: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
-
-interface BackgroundMessage {
-  type: "SUMMARIZE_WITH_DEEPSEEK" | "CHAT_WITH_AI";
-  payload: {
-    title: string;
-    textContent: string;
-    message?: string;
-    history?: ChatMessage[];
-    promptId?: string;
-    promptTemplate?: string;
-  };
-}
-
-interface DeepSeekConfig {
-  baseUrl: string;
-  apiKey: string;
-  model?: string;
-  maxTokens?: number;
-  temperature?: number;
-}
 
 async function getDeepSeekConfig(): Promise<DeepSeekConfig | null> {
   return new Promise((resolve) => {
@@ -260,7 +228,7 @@ async function handleChatWithAI(
 
     sendResponse({
       success: true,
-      message: { role: "assistant", content },
+      message: { role: "assistant", content, timestamp: Date.now() },
     });
   } catch (err) {
     sendResponse({

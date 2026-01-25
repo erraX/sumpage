@@ -64,6 +64,9 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   const [promptName, setPromptName] = useState("");
   const [promptTemplate, setPromptTemplate] = useState("");
 
+  // Confirmation state for delete
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   useEffect(() => {
     loadConfig();
     loadPrompts();
@@ -86,6 +89,9 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   };
 
   const handleSaveApi = async () => {
+    // Clear previous errors
+    setError(null);
+
     if (!baseUrl.trim()) {
       setError("Please enter API Base URL");
       return;
@@ -149,11 +155,11 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
 
   const handleUpdatePrompt = async (id: string) => {
     if (!promptName.trim()) {
-      alert("Please enter a name");
+      setError("Please enter a name");
       return;
     }
     if (!promptTemplate.includes("{title}") || !promptTemplate.includes("{content}")) {
-      alert("Template must include {title} and {content} placeholders");
+      setError("Template must include {title} and {content} placeholders");
       return;
     }
     const updated = await updatePromptTemplate(id, {
@@ -163,22 +169,32 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
     if (updated) {
       setPrompts(prompts.map((p) => (p.id === id ? updated : p)));
       setEditingPromptId(null);
+      setError(null); // Clear any previous errors
     }
   };
 
   const handleDeletePrompt = async (id: string) => {
     const prompt = prompts.find((p) => p.id === id);
     if (prompt?.isDefault) {
-      alert("Cannot delete the default prompt");
+      setError("Cannot delete the default prompt");
       return;
     }
-    if (!confirm("Are you sure you want to delete this prompt?")) return;
-    const success = await deletePromptTemplate(id);
-    if (success) {
-      setPrompts(prompts.filter((p) => p.id !== id));
-      if (editingPromptId === id) {
-        setEditingPromptId(null);
+    // Show confirmation
+    if (confirmDeleteId === id) {
+      // User confirmed, proceed with deletion
+      const success = await deletePromptTemplate(id);
+      if (success) {
+        setPrompts(prompts.filter((p) => p.id !== id));
+        if (editingPromptId === id) {
+          setEditingPromptId(null);
+        }
       }
+      setConfirmDeleteId(null);
+    } else {
+      // Show confirmation state
+      setConfirmDeleteId(id);
+      // Auto-hide confirmation after 3 seconds
+      setTimeout(() => setConfirmDeleteId(null), 3000);
     }
   };
 
@@ -191,12 +207,14 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
     setEditingPromptId(prompt.id);
     setPromptName(prompt.name);
     setPromptTemplate(prompt.template);
+    setError(null); // Clear any previous errors
   };
 
   const cancelEditing = () => {
     setEditingPromptId(null);
     setPromptName("");
     setPromptTemplate("");
+    setError(null);
   };
 
   return (
@@ -300,6 +318,14 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
               + New Prompt
             </NewPromptButton>
 
+            {error && activeTab === "prompts" && (
+              <div style={{ marginBottom: "16px" }}>
+                <div className="sumpage-error">
+                  <p>{error}</p>
+                </div>
+              </div>
+            )}
+
             <PromptList>
               {prompts.map((prompt) => (
                 <PromptItem key={prompt.id}>
@@ -354,8 +380,12 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
                             Edit
                           </PromptItemButton>
                           {!prompt.isDefault && (
-                            <PromptItemButton $danger onClick={() => handleDeletePrompt(prompt.id)}>
-                              Delete
+                            <PromptItemButton
+                              $danger
+                              $confirming={confirmDeleteId === prompt.id}
+                              onClick={() => handleDeletePrompt(prompt.id)}
+                            >
+                              {confirmDeleteId === prompt.id ? "Click again to confirm" : "Delete"}
                             </PromptItemButton>
                           )}
                         </PromptItemActions>

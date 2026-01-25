@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ErrorContainer, RetryButton } from "./styles";
 
 interface ErrorNoticeProps {
@@ -5,7 +6,7 @@ interface ErrorNoticeProps {
   onRetry: () => void;
 }
 
-export function ErrorNotice({ message, onRetry }: ErrorNoticeProps) {
+export const ErrorNotice = memo(function ErrorNotice({ message, onRetry }: ErrorNoticeProps) {
   return (
     <ErrorContainer>
       <p>{message}</p>
@@ -14,4 +15,4 @@ export function ErrorNotice({ message, onRetry }: ErrorNoticeProps) {
       </RetryButton>
     </ErrorContainer>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   ResultContainer,
   AIBadge,
@@ -16,7 +17,7 @@ interface SummaryViewProps {
   renderInlineMarkdown: (content: string) => string;
 }
 
-export function SummaryView({
+export const SummaryView = memo(function SummaryView({
   summary,
   keyPoints,
   onRegenerate,
@@ -48,4 +49,4 @@ export function SummaryView({
       </Actions>
     </ResultContainer>
   );
-}
+});
