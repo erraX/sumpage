@@ -1,16 +1,42 @@
 import { useEffect, useState } from "react";
-import type { DeepSeekConfig, PromptTemplate } from "../../types";
+import type { PromptTemplate, ProviderConfig } from "../../new/models";
 import {
-  getDeepSeekConfig,
-  saveDeepSeekConfig,
-  getPromptTemplates,
-  addPromptTemplate,
-  updatePromptTemplate,
-  deletePromptTemplate,
-  setDefaultPromptTemplate,
-  initializePromptTemplates,
-} from "../../utils/storage";
-import { DEFAULT_PROMPT_TEMPLATE } from "../../types";
+  getConfig,
+  saveConfig,
+  getTemplates,
+  addTemplate,
+  updateTemplate,
+  deleteTemplate,
+  initializeTemplates,
+} from "../../new/storages";
+
+const DEFAULT_PROMPT_TEMPLATE: PromptTemplate = {
+  id: "default",
+  name: "Default Summary",
+  template: `Please summarize the following webpage content:
+
+Title: {title}
+
+Content:
+{content}
+
+Please provide:
+1. A concise summary (2-3 paragraphs)
+2. 3-5 key points as bullet points
+
+Format your response as:
+## Summary
+[your summary here]
+
+## Key Points
+- [key point 1]
+- [key point 2]
+- [key point 3]`,
+  isDefault: true,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+};
+
 import {
   Content,
   Container,
@@ -73,7 +99,7 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   }, []);
 
   const loadConfig = async () => {
-    const config = await getDeepSeekConfig();
+    const config = await getConfig();
     if (config) {
       setBaseUrl(config.baseUrl);
       setApiKey(config.apiKey);
@@ -83,8 +109,8 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   };
 
   const loadPrompts = async () => {
-    await initializePromptTemplates(DEFAULT_PROMPT_TEMPLATE);
-    const templates = await getPromptTemplates();
+    await initializeTemplates(DEFAULT_PROMPT_TEMPLATE);
+    const templates = await getTemplates();
     setPrompts(templates);
   };
 
@@ -121,14 +147,15 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
     setError(null);
 
     try {
-      const config: DeepSeekConfig = {
+      const config: ProviderConfig = {
+        id: `prov-${Date.now()}`,
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
         model: "deepseek-chat",
         maxTokens: maxTokensNum,
         temperature: tempNum,
       };
-      await saveDeepSeekConfig(config);
+      await saveConfig(config);
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
@@ -142,10 +169,9 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   };
 
   const handleAddPrompt = async () => {
-    const newPrompt = await addPromptTemplate({
+    const newPrompt = await addTemplate({
       name: "New Prompt",
       template: "Please summarize this page:\n\nTitle: {title}\n\nContent:\n{content}",
-      isDefault: false,
     });
     setPrompts([...prompts, newPrompt]);
     setEditingPromptId(newPrompt.id);
@@ -162,7 +188,7 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
       setError("Template must include {title} and {content} placeholders");
       return;
     }
-    const updated = await updatePromptTemplate(id, {
+    const updated = await updateTemplate(id, {
       name: promptName.trim(),
       template: promptTemplate.trim(),
     });
@@ -182,7 +208,7 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
     // Show confirmation
     if (confirmDeleteId === id) {
       // User confirmed, proceed with deletion
-      const success = await deletePromptTemplate(id);
+      const success = await deleteTemplate(id);
       if (success) {
         setPrompts(prompts.filter((p) => p.id !== id));
         if (editingPromptId === id) {
@@ -199,8 +225,16 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   };
 
   const handleSetDefault = async (id: string) => {
-    await setDefaultPromptTemplate(id);
-    setPrompts(prompts.map((p) => ({ ...p, isDefault: p.id === id })));
+    // Remove isDefault from all, set for the selected one
+    const updatedPrompts = prompts.map((p) => ({
+      ...p,
+      isDefault: p.id === id,
+    }));
+    // Update all templates in storage
+    for (const p of updatedPrompts) {
+      await updateTemplate(p.id, { isDefault: p.isDefault });
+    }
+    setPrompts(updatedPrompts);
   };
 
   const startEditing = (prompt: PromptTemplate) => {
@@ -367,7 +401,7 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
                     // View mode
                     <>
                       <PromptItemHead>
-                        <PromptItemTitle $isDefault={prompt.isDefault}>
+                        <PromptItemTitle $isDefault={!!prompt.isDefault}>
                           {prompt.name}
                         </PromptItemTitle>
                         <PromptItemActions>

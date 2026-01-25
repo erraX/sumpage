@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { KeyboardEvent, RefObject } from "react";
-import type { ChatMessage, PromptTemplate } from "../../types";
-import { getPromptTemplates, getSelectedPromptId, setSelectedPromptId } from "../../utils/storage";
+import type { ChatMessage, PromptTemplate } from "../../new/models";
+import { getTemplates, getSelectedPromptId, setSelectedPromptId } from "../../new/storages";
 import {
   ChatContainer,
   ChatMessages,
@@ -59,7 +59,7 @@ export function ChatView({
 
   const loadTemplates = async () => {
     const [prompts, selected] = await Promise.all([
-      getPromptTemplates(),
+      getTemplates(),
       getSelectedPromptId(),
     ]);
     setTemplates(prompts);
@@ -81,15 +81,19 @@ export function ChatView({
     [templates, onInputChange, onPromptSelect]
   );
 
-  const renderMessage = (msg: ChatMessage, index: number) => (
-    <ChatMessageStyled key={index} $role={msg.role}>
-      <ChatRole $role={msg.role}>{msg.role === "user" ? "You" : "AI"}</ChatRole>
-      <ChatContent
-        className="chat-content"
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-      />
-    </ChatMessageStyled>
-  );
+  const renderMessage = (msg: ChatMessage, index: number) => {
+    // Normalize role for styling (system messages are treated as assistant)
+    const role = msg.role === 'user' ? 'user' : 'assistant';
+    return (
+      <ChatMessageStyled key={index} $role={role}>
+        <ChatRole $role={role}>{msg.role === "user" ? "You" : "AI"}</ChatRole>
+        <ChatContent
+          className="chat-content"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+        />
+      </ChatMessageStyled>
+    );
+  };
 
   if (isLoading) {
     return (

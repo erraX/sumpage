@@ -7,6 +7,7 @@ import { SidebarApp } from './SidebarApp';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { theme } from './theme';
+import { useUIStore } from './stores/uiStore';
 
 // Prevent multiple injections
 let injected = false;
@@ -203,9 +204,12 @@ export function injectSidebar() {
   let panelRoot: ReturnType<typeof createRoot> | null = null;
   let panelHost: HTMLElement | null = null;
 
-  function openPanel(showSettings = false, options?: { disableAnimation?: boolean }) {
+  function openPanel(_showSettings = false, options?: { disableAnimation?: boolean }) {
     if (panelOpen) return;
     panelOpen = true;
+
+    // Set showSettings via store (need to use getState for synchronous access)
+    useUIStore.getState().setShowSettings(_showSettings);
 
     // Create panel host
     panelHost = document.createElement('div');
@@ -340,7 +344,7 @@ export function injectSidebar() {
       React.createElement(
         CacheProvider,
         { value: cache },
-        React.createElement(SidebarApp, { onClose: closePanel, showSettings: showSettings })
+        React.createElement(SidebarApp, { onClose: closePanel })
       )
     );
 

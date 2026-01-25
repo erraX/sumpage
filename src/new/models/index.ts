@@ -10,6 +10,7 @@ export interface PromptTemplate {
   name: string;
   description?: string;
   template: string;
+  isDefault?: boolean; // Keep for backward compatibility
   createdAt: number;
   updatedAt: number;
 }
@@ -67,3 +68,44 @@ export interface ChatSession {
 }
 
 export type ChatHistoryStore = Record<string, ChatSession>;
+
+// ============ Summary ============
+
+export interface AISummary {
+  summary: string;
+  keyPoints: string[];
+}
+
+export interface PageSummary {
+  title: string;
+  textContent: string;
+  wordCount: number;
+  summary: string;
+  keyPoints: string[];
+}
+
+// ============ Message Types ============
+
+export type BackgroundMessageType =
+  | 'SUMMARIZE_WITH_DEEPSEEK'
+  | 'CHAT_WITH_AI';
+
+export interface BackgroundMessage {
+  type: BackgroundMessageType;
+  payload: {
+    title: string;
+    textContent: string;
+    message?: string;
+    history?: ChatMessage[];
+    promptId?: string;
+    promptTemplate?: string;
+  };
+}
+
+// ============ Window Interface Extension ============
+
+declare global {
+  interface Window {
+    sumpageInjected?: boolean;
+  }
+}

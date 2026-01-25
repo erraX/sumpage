@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react';
-import type { PromptTemplate } from '../../types';
+import type { PromptTemplate } from '../../new/models';
 import {
   EmptyContainer,
   PromptPanel,

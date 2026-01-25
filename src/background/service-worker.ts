@@ -4,14 +4,14 @@ import type {
   ChatMessage,
   PromptTemplate,
   BackgroundMessage,
-  DeepSeekConfig,
-} from "../types";
+  ProviderConfig,
+} from "../new/models";
 
 const MAX_CONTENT_LENGTH = 12000;
 
 console.log("[Background] Service worker starting...");
 
-async function getDeepSeekConfig(): Promise<DeepSeekConfig | null> {
+async function getDeepSeekConfig(): Promise<ProviderConfig | null> {
   return new Promise((resolve) => {
     chrome.storage.local.get("deepseekConfig", (result) => {
       resolve(result.deepseekConfig || null);

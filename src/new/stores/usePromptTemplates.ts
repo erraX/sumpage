@@ -4,9 +4,11 @@
 import { create } from 'zustand';
 import type { PromptTemplate } from '../models';
 import * as storage from '../storages/promptTemplateStorage';
+import { getSelectedPromptId, setSelectedPromptId } from '../storages/globalSettingsStorage';
 
 interface State {
   templates: PromptTemplate[];
+  selectedPromptId: string | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -16,12 +18,14 @@ interface Actions {
   add: (data: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PromptTemplate>;
   update: (id: string, updates: Partial<PromptTemplate>) => Promise<PromptTemplate | null>;
   delete: (id: string) => Promise<boolean>;
+  selectTemplate: (id: string | null) => Promise<void>;
   initialize: (defaultTemplate: PromptTemplate) => Promise<void>;
   clearError: () => void;
 }
 
 export const usePromptTemplates = create<State & Actions>((set, get) => ({
   templates: [],
+  selectedPromptId: null,
   isLoading: false,
   error: null,
 
@@ -29,7 +33,8 @@ export const usePromptTemplates = create<State & Actions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const templates = await storage.getTemplates();
-      set({ templates, isLoading: false });
+      const selectedId = await getSelectedPromptId();
+      set({ templates, selectedPromptId: selectedId, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to load templates', isLoading: false });
     }
@@ -76,6 +81,7 @@ export const usePromptTemplates = create<State & Actions>((set, get) => ({
       if (success) {
         set((state) => ({
           templates: state.templates.filter((t) => t.id !== id),
+          selectedPromptId: state.selectedPromptId === id ? null : state.selectedPromptId,
           isLoading: false,
         }));
       } else {
@@ -86,6 +92,11 @@ export const usePromptTemplates = create<State & Actions>((set, get) => ({
       set({ error: 'Failed to delete template', isLoading: false });
       throw error;
     }
+  },
+
+  selectTemplate: async (id) => {
+    await setSelectedPromptId(id);
+    set({ selectedPromptId: id });
   },
 
   initialize: async (defaultTemplate) => {

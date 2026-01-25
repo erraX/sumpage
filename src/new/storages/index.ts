@@ -14,7 +14,7 @@ export {
   subscribe,
 } from './chromeStorage';
 
-// Re-export storage functions (avoid naming conflicts)
+// Re-export prompt template storage
 export {
   getTemplates,
   saveTemplates,
@@ -25,36 +25,43 @@ export {
   initialize as initializeTemplates,
 } from './promptTemplateStorage';
 
+// Re-export provider config storage
 export {
+  getConfig,
+  saveConfig,
+  clearConfig,
+  isConfigured,
   getConfigs,
   saveConfigs,
-  getConfig,
+  getConfigById,
   addConfig,
   updateConfig,
   deleteConfig,
+  findByApiKey,
   initialize as initializeConfigs,
 } from './providerConfigStorage';
 
+// Re-export global settings storage
 export {
   getSettings,
   saveSettings,
   updateSettings,
   resetSettings,
   initialize as initializeSettings,
+  getSelectedPromptId,
+  setSelectedPromptId,
 } from './globalSettingsStorage';
 
+// Re-export chat history storage
 export {
+  getChatHistory,
+  saveChatHistory,
+  clearChatHistory,
+  getAllChatHistory,
+  clearAll as clearAllChatHistory,
+  initialize as initializeChat,
   getSessions,
-  saveSessions,
-  getSessionByUrl,
+  getSession,
   upsertSession,
   deleteSession,
-  getRecords,
-  saveRecords,
-  getRecord,
-  createRecord,
-  updateRecord,
-  deleteRecord,
-  clearAll as clearChatHistory,
-  initialize as initializeChat,
 } from './chatHistoryStorage';

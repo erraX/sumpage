@@ -1,173 +1,150 @@
 /**
- * ChatHistory storage - CRUD operations for chat sessions and history records
+ * ChatHistory storage - Uses 'chatHistory' key for backward compatibility
  */
-import type { ChatSession, ChatHistoryRecord } from '../models';
+import type { ChatMessage } from '../models';
 import { getValue, setValue, isChromeStorageAvailable } from './chromeStorage';
 
-const SESSIONS_KEY = 'chatSessions';
-const RECORDS_KEY = 'chatRecords';
+const STORAGE_KEY = 'chatHistory';
 
-// Get all chat sessions
-export async function getSessions(): Promise<Record<string, ChatSession>> {
-  if (!isChromeStorageAvailable()) return {};
+interface ChatHistoryRecord {
+  url: string;
+  title: string;
+  messages: ChatMessage[];
+  lastUpdated: number;
+}
+
+interface ChatHistoryStorage {
+  [url: string]: ChatHistoryRecord;
+}
+
+// Get chat history for a specific URL
+export async function getChatHistory(url: string): Promise<ChatMessage[] | null> {
+  if (!isChromeStorageAvailable()) return null;
   try {
-    return await getValue<Record<string, ChatSession>>(SESSIONS_KEY, {});
+    const result = await getValue<ChatHistoryStorage>(STORAGE_KEY, {});
+    return result[url]?.messages || null;
   } catch {
-    console.error('[ChatHistoryStorage] Failed to get sessions');
-    return {};
+    console.error('[ChatHistoryStorage] Failed to get chat history');
+    return null;
   }
 }
 
-// Save all chat sessions
-export async function saveSessions(
-  sessions: Record<string, ChatSession>
+// Save chat history for a specific URL
+export async function saveChatHistory(
+  url: string,
+  title: string,
+  messages: ChatMessage[]
 ): Promise<void> {
   if (!isChromeStorageAvailable()) {
     throw new Error('Chrome storage is not available');
   }
   try {
-    await setValue(SESSIONS_KEY, sessions);
+    const result = await getValue<ChatHistoryStorage>(STORAGE_KEY, {});
+    result[url] = {
+      url,
+      title,
+      messages,
+      lastUpdated: Date.now(),
+    };
+    await setValue(STORAGE_KEY, result);
   } catch (error) {
-    console.error('[ChatHistoryStorage] Failed to save sessions:', error);
+    console.error('[ChatHistoryStorage] Failed to save chat history:', error);
     throw error;
   }
 }
 
-// Get session by page URL
-export async function getSessionByUrl(
-  pageUrl: string
-): Promise<ChatSession | null> {
-  const sessions = await getSessions();
-  return sessions[pageUrl] || null;
-}
-
-// Create or update session for a page
-export async function upsertSession(
-  pageUrl: string,
-  sessionData: Omit<ChatSession, 'id' | 'pageUrl' | 'createdAt' | 'updatedAt'>
-): Promise<ChatSession> {
-  const sessions = await getSessions();
-  const now = Date.now();
-  const existing = sessions[pageUrl];
-
-  const session: ChatSession = existing
-    ? {
-        ...existing,
-        ...sessionData,
-        updatedAt: now,
-      }
-    : {
-        id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        pageUrl,
-        createdAt: now,
-        updatedAt: now,
-        ...sessionData,
-      };
-
-  sessions[pageUrl] = session;
-  await saveSessions(sessions);
-  return session;
-}
-
-// Delete session by page URL
-export async function deleteSession(pageUrl: string): Promise<boolean> {
-  const sessions = await getSessions();
-  if (!sessions[pageUrl]) return false;
-  delete sessions[pageUrl];
-  await saveSessions(sessions);
-  return true;
-}
-
-// ============ Chat History Records ============
-
-// Get all history records
-export async function getRecords(): Promise<Record<string, ChatHistoryRecord>> {
-  if (!isChromeStorageAvailable()) return {};
+// Clear chat history for a specific URL
+export async function clearChatHistory(url: string): Promise<void> {
+  if (!isChromeStorageAvailable()) return;
   try {
-    return await getValue<Record<string, ChatHistoryRecord>>(RECORDS_KEY, {});
+    const result = await getValue<ChatHistoryStorage>(STORAGE_KEY, {});
+    delete result[url];
+    await setValue(STORAGE_KEY, result);
+  } catch (error) {
+    console.error('[ChatHistoryStorage] Failed to clear chat history:', error);
+  }
+}
+
+// Get all chat history records
+export async function getAllChatHistory(): Promise<ChatHistoryRecord[]> {
+  if (!isChromeStorageAvailable()) return [];
+  try {
+    const result = await getValue<ChatHistoryStorage>(STORAGE_KEY, {});
+    return Object.values(result);
   } catch {
-    console.error('[ChatHistoryStorage] Failed to get records');
-    return {};
+    console.error('[ChatHistoryStorage] Failed to get all chat history');
+    return [];
   }
 }
 
-// Save all history records
-export async function saveRecords(
-  records: Record<string, ChatHistoryRecord>
-): Promise<void> {
-  if (!isChromeStorageAvailable()) {
-    throw new Error('Chrome storage is not available');
-  }
-  try {
-    await setValue(RECORDS_KEY, records);
-  } catch (error) {
-    console.error('[ChatHistoryStorage] Failed to save records:', error);
-    throw error;
-  }
-}
-
-// Get a single record by ID
-export async function getRecord(
-  id: string
-): Promise<ChatHistoryRecord | null> {
-  const records = await getRecords();
-  return records[id] || null;
-}
-
-// Create a new history record
-export async function createRecord(
-  messages: ChatHistoryRecord['messages']
-): Promise<ChatHistoryRecord> {
-  const records = await getRecords();
-  const now = Date.now();
-  const id = `rec-${now}-${Math.random().toString(36).slice(2, 9)}`;
-  const record: ChatHistoryRecord = {
-    id,
-    messages,
-    createdAt: now,
-  };
-  records[id] = record;
-  await saveRecords(records);
-  return record;
-}
-
-// Update a history record
-export async function updateRecord(
-  id: string,
-  messages: ChatHistoryRecord['messages']
-): Promise<ChatHistoryRecord | null> {
-  const records = await getRecords();
-  if (!records[id]) return null;
-  records[id] = { ...records[id], messages };
-  await saveRecords(records);
-  return records[id];
-}
-
-// Delete a history record
-export async function deleteRecord(id: string): Promise<boolean> {
-  const records = await getRecords();
-  if (!records[id]) return false;
-  delete records[id];
-  await saveRecords(records);
-  return true;
-}
-
-// Clear all chat data
+// Clear all chat history
 export async function clearAll(): Promise<void> {
   if (!isChromeStorageAvailable()) return;
-  await saveSessions({});
-  await saveRecords({});
+  try {
+    await setValue(STORAGE_KEY, {});
+  } catch (error) {
+    console.error('[ChatHistoryStorage] Failed to clear all chat history:', error);
+  }
 }
 
-// Initialize chat history storage (starts empty)
+// Initialize chat history storage
 export async function initialize(): Promise<void> {
   if (!isChromeStorageAvailable()) return;
-  // Chat history should start empty - ensure clean state
-  const sessions = await getSessions();
-  const records = await getRecords();
-  if (Object.keys(sessions).length > 0 || Object.keys(records).length > 0) {
-    // Already has data, don't clear
-    return;
+  // Starts empty, nothing to initialize
+}
+
+// ============ Session-based API (for new model compatibility) ============
+
+export interface Session {
+  pageUrl: string;
+  messages: ChatMessage[];
+  lastUpdated: number;
+}
+
+export async function getSessions(): Promise<Record<string, Session>> {
+  if (!isChromeStorageAvailable()) return {};
+  try {
+    const result = await getValue<ChatHistoryStorage>(STORAGE_KEY, {});
+    const sessions: Record<string, Session> = {};
+    for (const [url, record] of Object.entries(result)) {
+      sessions[url] = {
+        pageUrl: url,
+        messages: record.messages,
+        lastUpdated: record.lastUpdated,
+      };
+    }
+    return sessions;
+  } catch {
+    return {};
   }
-  // Storage initialized, starting with empty state
+}
+
+export async function getSession(url: string): Promise<Session | null> {
+  const history = await getChatHistory(url);
+  if (!history) return null;
+  return {
+    pageUrl: url,
+    messages: history,
+    lastUpdated: Date.now(),
+  };
+}
+
+export async function upsertSession(
+  url: string,
+  messages: ChatMessage[]
+): Promise<Session> {
+  const title = typeof document !== 'undefined' ? document.title : 'Untitled';
+  await saveChatHistory(url, title, messages);
+  return {
+    pageUrl: url,
+    messages,
+    lastUpdated: Date.now(),
+  };
+}
+
+export async function deleteSession(url: string): Promise<boolean> {
+  const history = await getChatHistory(url);
+  if (!history) return false;
+  await clearChatHistory(url);
+  return true;
 }

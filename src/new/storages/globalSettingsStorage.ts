@@ -1,10 +1,12 @@
 /**
  * GlobalSettings storage - Get/set global application settings
+ * Handles selectedPromptId key for backward compatibility
  */
 import type { GlobalSettings } from '../models';
 import { getValue, setValue, isChromeStorageAvailable } from './chromeStorage';
 
 const STORAGE_KEY = 'globalSettings';
+const SELECTED_PROMPT_ID_KEY = 'selectedPromptId';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   providerId: '',
@@ -59,5 +61,29 @@ export async function initialize(): Promise<void> {
   if (current.providerId === DEFAULT_SETTINGS.providerId &&
       current.promptTemplateId === DEFAULT_SETTINGS.promptTemplateId) {
     await saveSettings(DEFAULT_SETTINGS);
+  }
+}
+
+// ============ Selected Prompt ID (backward compatibility) ============
+
+export async function getSelectedPromptId(): Promise<string | null> {
+  if (!isChromeStorageAvailable()) return null;
+  try {
+    return await getValue<string | null>(SELECTED_PROMPT_ID_KEY, null);
+  } catch {
+    return null;
+  }
+}
+
+export async function setSelectedPromptId(id: string | null): Promise<void> {
+  if (!isChromeStorageAvailable()) return;
+  try {
+    if (id === null) {
+      await setValue(SELECTED_PROMPT_ID_KEY, null);
+    } else {
+      await setValue(SELECTED_PROMPT_ID_KEY, id);
+    }
+  } catch (error) {
+    console.error('[GlobalSettingsStorage] Failed to set selected prompt ID:', error);
   }
 }

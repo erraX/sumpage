@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { AISummary } from "../../types";
-import { useChatStore } from "../stores/chatStore";
+import type { AISummary, ChatMessage } from "../../new/models";
+import { useChatSession } from "../../new/stores/useChatSession";
 import { useUIStore } from "../stores/uiStore";
-import { getChatHistory, saveChatHistory } from "../utils/chatHistory";
+import { getChatHistory, saveChatHistory } from "../../new/storages/chatHistoryStorage";
 
 interface UseSummarizerReturn {
   summarize: (promptId?: string) => Promise<void>;
@@ -12,7 +12,7 @@ interface UseSummarizerReturn {
 }
 
 export function useSummarizer(): UseSummarizerReturn {
-  const { setMessages, loadChatHistory } = useChatStore();
+  const { setMessages, loadChatHistory: loadFromStore } = useChatSession();
   const {
     setIsLoading,
     setLoadingStep,
@@ -82,7 +82,7 @@ export function useSummarizer(): UseSummarizerReturn {
         const existingHistory = await getChatHistory(content.url);
         if (existingHistory && existingHistory.length > 0) {
           // Load existing chat
-          loadChatHistory(content.url);
+          loadFromStore(content.url);
           setIsLoading(false);
           setLoadingStep("complete");
           return;
@@ -105,7 +105,7 @@ export function useSummarizer(): UseSummarizerReturn {
 
         if (response.success && response.data) {
           // Initialize chat with the summary as the first AI message
-          const initialMessages = [
+          const initialMessages: ChatMessage[] = [
             {
               role: "assistant" as const,
               content: response.data.summary,
@@ -129,7 +129,7 @@ export function useSummarizer(): UseSummarizerReturn {
         }, 1000);
       }
     },
-    [extractPageContent, setIsLoading, setLoadingStep, setError, setMessages, loadChatHistory, handleError]
+    [extractPageContent, setIsLoading, setLoadingStep, setError, setMessages, loadFromStore, handleError]
   );
 
   const summarizeWithTemplate = useCallback(
@@ -145,7 +145,7 @@ export function useSummarizer(): UseSummarizerReturn {
         // Check for existing chat history
         const existingHistory = await getChatHistory(content.url);
         if (existingHistory && existingHistory.length > 0) {
-          loadChatHistory(content.url);
+          loadFromStore(content.url);
           setIsLoading(false);
           setLoadingStep("complete");
           return;
@@ -167,7 +167,7 @@ export function useSummarizer(): UseSummarizerReturn {
         });
 
         if (response.success && response.data) {
-          const initialMessages = [
+          const initialMessages: ChatMessage[] = [
             {
               role: "assistant" as const,
               content: response.data.summary,
@@ -191,7 +191,7 @@ export function useSummarizer(): UseSummarizerReturn {
         }, 1000);
       }
     },
-    [extractPageContent, setIsLoading, setLoadingStep, setError, setMessages, loadChatHistory, handleError]
+    [extractPageContent, setIsLoading, setLoadingStep, setError, setMessages, loadFromStore, handleError]
   );
 
   return {
