@@ -11,6 +11,32 @@ import {
   initializePromptTemplates,
 } from "../../utils/storage";
 import { DEFAULT_PROMPT_TEMPLATE } from "../../types";
+import {
+  Content,
+  Container,
+  BackButton,
+  TabsContainer,
+  TabButton,
+  FormGroup,
+  Label,
+  StyledInput,
+  AdvancedButton,
+  AdvancedSettings,
+  GridRow,
+  SuccessMessage,
+  NewPromptButton,
+  PromptList,
+  PromptItem,
+  PromptItemHead,
+  PromptItemTitle,
+  PromptItemActions,
+  PromptItemButton,
+  PromptTemplatePre,
+  PromptEditForm,
+  EditActions,
+  SummarizeButton,
+  RetryButton,
+} from "./styles";
 
 interface SidebarSettingsProps {
   onComplete: () => void;
@@ -174,235 +200,177 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   };
 
   return (
-    <div className="sumpage-sidebar-content">
-      <div className="sumpage-container">
-        <button className="sumpage-retry-btn" onClick={onBack} style={{ marginBottom: "16px" }}>
+    <Content>
+      <Container>
+        <BackButton onClick={onBack}>
           Back
-        </button>
+        </BackButton>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-          <button
-            className={`sumpage-summarize-btn ${activeTab === "api" ? "" : "sumpage-secondary"}`}
+        <TabsContainer>
+          <TabButton
+            $active={activeTab === "api"}
             onClick={() => setActiveTab("api")}
-            style={{ flex: 1 }}
           >
             API Settings
-          </button>
-          <button
-            className={`sumpage-summarize-btn ${activeTab === "prompts" ? "" : "sumpage-secondary"}`}
+          </TabButton>
+          <TabButton
+            $active={activeTab === "prompts"}
             onClick={() => setActiveTab("prompts")}
-            style={{ flex: 1 }}
           >
             Prompts
-          </button>
-        </div>
+          </TabButton>
+        </TabsContainer>
 
         {activeTab === "api" && (
           <>
-            <div className="sumpage-form-group">
-              <label className="sumpage-label">API Base URL</label>
-              <input
-                className="sumpage-input"
+            <FormGroup>
+              <Label>API Base URL</Label>
+              <StyledInput
                 type="url"
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="https://api.deepseek.com/v1"
                 disabled={saving}
               />
-            </div>
+            </FormGroup>
 
-            <div className="sumpage-form-group">
-              <label className="sumpage-label">API Key</label>
-              <input
-                className="sumpage-input"
+            <FormGroup>
+              <Label>API Key</Label>
+              <StyledInput
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
                 disabled={saving}
               />
-            </div>
+            </FormGroup>
 
-            <button
-              className="sumpage-refresh-btn"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              style={{ marginBottom: "16px" }}
-            >
+            <AdvancedButton onClick={() => setShowAdvanced(!showAdvanced)}>
               {showAdvanced ? "Hide" : "Show"} Advanced Settings
-            </button>
+            </AdvancedButton>
 
             {showAdvanced && (
-              <div style={{ marginBottom: "16px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="sumpage-form-group">
-                    <label className="sumpage-label">Max Tokens</label>
-                    <input
-                      className="sumpage-input"
+              <AdvancedSettings>
+                <GridRow>
+                  <FormGroup>
+                    <Label>Max Tokens</Label>
+                    <StyledInput
                       type="text"
                       value={maxTokens}
                       onChange={(e) => setMaxTokens(e.target.value)}
                       disabled={saving}
                     />
-                  </div>
-                  <div className="sumpage-form-group">
-                    <label className="sumpage-label">Temperature</label>
-                    <input
-                      className="sumpage-input"
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>Temperature</Label>
+                    <StyledInput
                       type="text"
                       value={temperature}
                       onChange={(e) => setTemperature(e.target.value)}
                       disabled={saving}
                     />
-                  </div>
-                </div>
-              </div>
+                  </FormGroup>
+                </GridRow>
+              </AdvancedSettings>
             )}
 
             {error && (
-              <div className="sumpage-error">
-                <p>{error}</p>
+              <div style={{ marginBottom: "16px" }}>
+                <div className="sumpage-error">
+                  <p>{error}</p>
+                </div>
               </div>
             )}
             {success && (
-              <div
-                style={{
-                  background: "var(--sumpage-success-soft)",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  marginBottom: "16px",
-                  textAlign: "center",
-                  color: "var(--sumpage-success)",
-                  border: "1px solid var(--sumpage-border)",
-                }}
-              >
+              <SuccessMessage>
                 Settings saved!
-              </div>
+              </SuccessMessage>
             )}
 
-            <button className="sumpage-summarize-btn" onClick={handleSaveApi} disabled={saving}>
+            <SummarizeButton onClick={handleSaveApi} disabled={saving}>
               {saving ? "Saving..." : "Save & Continue"}
-            </button>
+            </SummarizeButton>
           </>
         )}
 
         {activeTab === "prompts" && (
           <>
-            <div style={{ marginBottom: "16px" }}>
-              <button className="sumpage-summarize-btn" onClick={handleAddPrompt}>
-                + New Prompt
-              </button>
-            </div>
+            <NewPromptButton onClick={handleAddPrompt}>
+              + New Prompt
+            </NewPromptButton>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <PromptList>
               {prompts.map((prompt) => (
-                <div
-                  key={prompt.id}
-                  style={{
-                    border: "1px solid var(--sumpage-border)",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    background: "var(--sumpage-surface)",
-                  }}
-                >
+                <PromptItem key={prompt.id}>
                   {editingPromptId === prompt.id ? (
                     // Edit mode
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <input
-                        className="sumpage-input"
+                    <PromptEditForm>
+                      <StyledInput
                         type="text"
                         value={promptName}
                         onChange={(e) => setPromptName(e.target.value)}
                         placeholder="Prompt name"
                       />
                       <textarea
-                        className="sumpage-textarea"
                         value={promptTemplate}
                         onChange={(e) => setPromptTemplate(e.target.value)}
                         rows={6}
                         placeholder="Prompt template with {title} and {content} placeholders"
+                        style={{
+                          width: "100%",
+                          padding: "12px 14px",
+                          border: "1px solid #d7e1dd",
+                          borderRadius: "10px",
+                          fontSize: "14px",
+                          fontFamily: "inherit",
+                          resize: "vertical",
+                          background: "#fbfbfa",
+                        }}
                       />
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button className="sumpage-summarize-btn" onClick={() => handleUpdatePrompt(prompt.id)}>
+                      <EditActions>
+                        <SummarizeButton onClick={() => handleUpdatePrompt(prompt.id)}>
                           Save
-                        </button>
-                        <button className="sumpage-retry-btn" onClick={cancelEditing}>
+                        </SummarizeButton>
+                        <RetryButton onClick={cancelEditing}>
                           Cancel
-                        </button>
-                      </div>
-                    </div>
+                        </RetryButton>
+                      </EditActions>
+                    </PromptEditForm>
                   ) : (
                     // View mode
                     <>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <span style={{ fontWeight: 600 }}>
+                      <PromptItemHead>
+                        <PromptItemTitle $isDefault={prompt.isDefault}>
                           {prompt.name}
-                          {prompt.isDefault && (
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                marginLeft: "8px",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                                background: "var(--sumpage-accent-soft)",
-                                color: "var(--sumpage-accent)",
-                              }}
-                            >
-                              Default
-                            </span>
-                          )}
-                        </span>
-                        <div style={{ display: "flex", gap: "4px" }}>
+                        </PromptItemTitle>
+                        <PromptItemActions>
                           {!prompt.isDefault && (
-                            <button
-                              className="sumpage-retry-btn"
-                              style={{ fontSize: "11px", padding: "4px 8px" }}
-                              onClick={() => handleSetDefault(prompt.id)}
-                            >
+                            <PromptItemButton onClick={() => handleSetDefault(prompt.id)}>
                               Set Default
-                            </button>
+                            </PromptItemButton>
                           )}
-                          <button
-                            className="sumpage-retry-btn"
-                            style={{ fontSize: "11px", padding: "4px 8px" }}
-                            onClick={() => startEditing(prompt)}
-                          >
+                          <PromptItemButton onClick={() => startEditing(prompt)}>
                             Edit
-                          </button>
+                          </PromptItemButton>
                           {!prompt.isDefault && (
-                            <button
-                              className="sumpage-retry-btn"
-                              style={{ fontSize: "11px", padding: "4px 8px", color: "var(--sumpage-error)" }}
-                              onClick={() => handleDeletePrompt(prompt.id)}
-                            >
+                            <PromptItemButton $danger onClick={() => handleDeletePrompt(prompt.id)}>
                               Delete
-                            </button>
+                            </PromptItemButton>
                           )}
-                        </div>
-                      </div>
-                      <pre
-                        style={{
-                          fontSize: "11px",
-                          margin: 0,
-                          padding: "8px",
-                          background: "var(--sumpage-bg)",
-                          borderRadius: "4px",
-                          overflow: "auto",
-                          maxHeight: "100px",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                        }}
-                      >
+                        </PromptItemActions>
+                      </PromptItemHead>
+                      <PromptTemplatePre>
                         {prompt.template}
-                      </pre>
+                      </PromptTemplatePre>
                     </>
                   )}
-                </div>
+                </PromptItem>
               ))}
-            </div>
+            </PromptList>
           </>
         )}
-      </div>
-    </div>
+      </Container>
+    </Content>
   );
 }

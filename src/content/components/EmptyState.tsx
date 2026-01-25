@@ -1,6 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import type { PromptTemplate } from "../../types";
 import { getPromptTemplates, getSelectedPromptId, setSelectedPromptId } from "../../utils/storage";
+import {
+  EmptyContainer,
+  PromptPanel,
+  PromptHeader,
+  PromptCount,
+  PromptTabs,
+  PromptTab,
+  PromptTabTitle,
+  PromptTabBadge,
+  PromptEditor,
+  PromptEditorHead,
+  PromptEditorTitle,
+  PromptEditorHint,
+  PromptTextarea,
+  SummarizeButton,
+} from "./styles";
 
 interface EmptyStateProps {
   onSendPrompt: (promptTemplate: string, promptId: string) => void;
@@ -59,51 +75,51 @@ export function EmptyState({ onSendPrompt, loading }: EmptyStateProps) {
 
   if (isLoading) {
     return (
-      <div className="sumpage-empty">
+      <EmptyContainer>
         <p>Loading...</p>
-      </div>
+      </EmptyContainer>
     );
   }
 
   return (
-    <div className="sumpage-empty">
-      <div className="sumpage-prompt-panel">
-        <div className="sumpage-prompt-header">
+    <EmptyContainer>
+      <PromptPanel>
+        <PromptHeader>
           <div>
             <h3>Prompt Studio</h3>
             <p>Pick a template, tweak if needed, then send.</p>
           </div>
-          <div className="sumpage-prompt-count">{templates.length} templates</div>
-        </div>
+          <PromptCount>{templates.length} templates</PromptCount>
+        </PromptHeader>
 
         {templates.length > 0 && (
-          <div className="sumpage-prompt-tabs" role="tablist" aria-label="Prompt templates">
+          <PromptTabs role="tablist" aria-label="Prompt templates">
             {templates.map((t) => {
               const isActive = selectedId === t.id;
               return (
-                <button
+                <PromptTab
                   key={t.id}
                   type="button"
-                  className={`sumpage-prompt-tab ${isActive ? "is-active" : ""}`}
+                  $active={isActive}
                   onClick={() => handleSelect(t.id)}
                   disabled={loading}
                   aria-pressed={isActive}
+                  data-active={!isActive ? "false" : "true"}
                 >
-                  <span className="sumpage-prompt-tab-title">{t.name}</span>
-                  {t.isDefault && <span className="sumpage-prompt-tab-badge">Default</span>}
-                </button>
+                  <PromptTabTitle>{t.name}</PromptTabTitle>
+                  {t.isDefault && <PromptTabBadge>Default</PromptTabBadge>}
+                </PromptTab>
               );
             })}
-          </div>
+          </PromptTabs>
         )}
 
-        <div className="sumpage-prompt-editor">
-          <div className="sumpage-prompt-editor-head">
-            <span className="sumpage-prompt-editor-title">Prompt</span>
-            <span className="sumpage-prompt-editor-hint">Enter to send, Shift+Enter for new line</span>
-          </div>
-          <textarea
-            className="sumpage-prompt-textarea"
+        <PromptEditor>
+          <PromptEditorHead>
+            <PromptEditorTitle>Prompt</PromptEditorTitle>
+            <PromptEditorHint>Enter to send, Shift+Enter for new line</PromptEditorHint>
+          </PromptEditorHead>
+          <PromptTextarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -111,16 +127,15 @@ export function EmptyState({ onSendPrompt, loading }: EmptyStateProps) {
             rows={8}
             disabled={loading}
           />
-        </div>
+        </PromptEditor>
 
-        <button
-          className="sumpage-summarize-btn sumpage-prompt-send"
+        <SummarizeButton
           onClick={handleSend}
           disabled={!inputValue.trim() || loading}
         >
           {loading ? "Sending..." : "Send →"}
-        </button>
-      </div>
-    </div>
+        </SummarizeButton>
+      </PromptPanel>
+    </EmptyContainer>
   );
 }

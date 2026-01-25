@@ -19,6 +19,7 @@ import { SummaryView } from "./components/SummaryView";
 import { EmptyState } from "./components/EmptyState";
 import { renderInlineMarkdown, renderMarkdown } from "./utils/markdown";
 import { clearChatHistory, getChatHistory, saveChatHistory } from "./utils/chatHistory";
+import { Host, Panel, Container, Content } from "./components/styles";
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -348,21 +349,21 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
 
   if (showSettings) {
     return (
-      <div className="sumpage-sidebar-host">
-        <div className="sumpage-sidebar-panel sumpage-open">
+      <Host>
+        <Panel>
           <SidebarHeader title="Settings" onClose={onClose} />
           <SidebarSettings onComplete={() => checkConfiguration({ closeIfConfigured: true })} onBack={() => setShowSettings(false)} />
-        </div>
-      </div>
+        </Panel>
+      </Host>
     );
   }
 
   return (
-    <div className="sumpage-sidebar-host">
-      <div className="sumpage-sidebar-panel sumpage-open">
+    <Host>
+      <Panel>
         <SidebarHeader title="Sumpage" onClose={onClose} showNewChat={hasChat} onNewChat={startNewChat} />
-        <div className="sumpage-sidebar-content">
-          <div className="sumpage-container">
+        <Content>
+          <Container>
             {loading && <LoadingStatus step={loadingStep} />}
 
             {error && <ErrorNotice message={error} onRetry={aiSummary ? sendChatMessage : summarizeWithAI} />}
@@ -397,9 +398,9 @@ export function SidebarApp({ onClose, showSettings: initialShowSettings = false 
             {!aiSummary && chatMessages.length === 0 && !loading && !error && (
               <EmptyState onSendPrompt={handleSendPrompt} loading={loading} />
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+          </Container>
+        </Content>
+      </Panel>
+    </Host>
   );
 }

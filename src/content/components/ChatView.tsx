@@ -2,6 +2,26 @@ import { useState, useEffect, useCallback } from "react";
 import type { KeyboardEvent, RefObject } from "react";
 import type { ChatMessage, PromptTemplate } from "../../types";
 import { getPromptTemplates, getSelectedPromptId, setSelectedPromptId } from "../../utils/storage";
+import {
+  ChatContainer,
+  ChatMessages,
+  ChatMessageStyled,
+  ChatRole,
+  ChatContent,
+  ChatTyping,
+  ChatTypingDot,
+  ChatPrompt,
+  ChatPromptHead,
+  ChatPromptLabel,
+  ChatPromptName,
+  ChatInputContainer,
+  ChatInput,
+  ChatSendButton,
+  PromptTabs,
+  PromptTab,
+  PromptTabTitle,
+  PromptTabBadge,
+} from "./styles";
 
 interface ChatViewProps {
   messages: ChatMessage[];
@@ -61,93 +81,91 @@ export function ChatView({
     [templates, onInputChange, onPromptSelect]
   );
 
+  const renderMessage = (msg: ChatMessage, index: number) => (
+    <ChatMessageStyled key={index} $role={msg.role}>
+      <ChatRole $role={msg.role}>{msg.role === "user" ? "You" : "AI"}</ChatRole>
+      <ChatContent
+        className="chat-content"
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+      />
+    </ChatMessageStyled>
+  );
+
   if (isLoading) {
     return (
-      <div className="sumpage-chat-container">
-        <div className="sumpage-chat-messages">
-          {messages.map((msg, index) => (
-            <div key={index} className={`sumpage-chat-message sumpage-chat-${msg.role}`}>
-              <div className="sumpage-chat-role">{msg.role === "user" ? "You" : "AI"}</div>
-              <div
-                className="sumpage-chat-content"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-              />
-            </div>
-          ))}
+      <ChatContainer>
+        <ChatMessages>
+          {messages.map(renderMessage)}
           {loading && (
-            <div className="sumpage-chat-message sumpage-chat-assistant">
-              <div className="sumpage-chat-role">AI</div>
-              <div className="sumpage-chat-content sumpage-typing">
-                <span className="sumpage-typing-dot"></span>
-                <span className="sumpage-typing-dot"></span>
-                <span className="sumpage-typing-dot"></span>
-              </div>
-            </div>
+            <ChatMessageStyled $role="assistant">
+              <ChatRole $role="assistant">AI</ChatRole>
+              <ChatContent>
+                <ChatTyping>
+                  <ChatTypingDot $index={0} />
+                  <ChatTypingDot $index={1} />
+                  <ChatTypingDot $index={2} />
+                </ChatTyping>
+              </ChatContent>
+            </ChatMessageStyled>
           )}
           <div ref={messagesEndRef} />
-        </div>
-      </div>
+        </ChatMessages>
+      </ChatContainer>
     );
   }
 
   return (
-    <div className="sumpage-chat-container">
-      <div className="sumpage-chat-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`sumpage-chat-message sumpage-chat-${msg.role}`}>
-            <div className="sumpage-chat-role">{msg.role === "user" ? "You" : "AI"}</div>
-            <div
-              className="sumpage-chat-content"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
-            />
-          </div>
-        ))}
+    <ChatContainer>
+      <ChatMessages>
+        {messages.map(renderMessage)}
         {loading && (
-          <div className="sumpage-chat-message sumpage-chat-assistant">
-            <div className="sumpage-chat-role">AI</div>
-            <div className="sumpage-chat-content sumpage-typing">
-              <span className="sumpage-typing-dot"></span>
-              <span className="sumpage-typing-dot"></span>
-              <span className="sumpage-typing-dot"></span>
-            </div>
-          </div>
+          <ChatMessageStyled $role="assistant">
+            <ChatRole $role="assistant">AI</ChatRole>
+            <ChatContent>
+              <ChatTyping>
+                <ChatTypingDot $index={0} />
+                <ChatTypingDot $index={1} />
+                <ChatTypingDot $index={2} />
+              </ChatTyping>
+            </ChatContent>
+          </ChatMessageStyled>
         )}
         <div ref={messagesEndRef} />
-      </div>
+      </ChatMessages>
 
       {/* Prompt Selector for Follow-ups */}
       {templates.length > 0 && (
-        <div className="sumpage-chat-prompt">
-          <div className="sumpage-chat-prompt-head">
-            <span className="sumpage-chat-prompt-label">Prompt</span>
+        <ChatPrompt>
+          <ChatPromptHead>
+            <ChatPromptLabel>Prompt</ChatPromptLabel>
             {activePromptName && (
-              <span className="sumpage-chat-prompt-name">{activePromptName}</span>
+              <ChatPromptName>{activePromptName}</ChatPromptName>
             )}
-          </div>
-          <div className="sumpage-prompt-tabs" role="tablist" aria-label="Prompt templates">
+          </ChatPromptHead>
+          <PromptTabs role="tablist" aria-label="Prompt templates">
             {templates.map((t) => {
               const isActive = selectedId === t.id;
               return (
-                <button
+                <PromptTab
                   key={t.id}
                   type="button"
-                  className={`sumpage-prompt-tab ${isActive ? "is-active" : ""}`}
+                  $active={isActive}
                   onClick={() => handleSelect(t.id)}
                   disabled={loading}
                   aria-pressed={isActive}
+                  data-active={!isActive ? "false" : "true"}
                 >
-                  <span className="sumpage-prompt-tab-title">{t.name}</span>
-                  {t.isDefault && <span className="sumpage-prompt-tab-badge">Default</span>}
-                </button>
+                  <PromptTabTitle>{t.name}</PromptTabTitle>
+                  {t.isDefault && <PromptTabBadge>Default</PromptTabBadge>}
+                </PromptTab>
               );
             })}
-          </div>
-        </div>
+          </PromptTabs>
+        </ChatPrompt>
       )}
 
-      <div className="sumpage-chat-input-container">
-        <textarea
-          className="sumpage-chat-input"
+      <ChatInputContainer>
+        <ChatInput
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyPress={onKeyPress}
@@ -155,14 +173,13 @@ export function ChatView({
           rows={1}
           disabled={loading}
         />
-        <button
-          className="sumpage-chat-send-btn"
+        <ChatSendButton
           onClick={onSend}
           disabled={!inputValue.trim() || loading}
         >
           →
-        </button>
-      </div>
-    </div>
+        </ChatSendButton>
+      </ChatInputContainer>
+    </ChatContainer>
   );
 }

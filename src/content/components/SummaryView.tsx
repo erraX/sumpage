@@ -1,3 +1,13 @@
+import {
+  ResultContainer,
+  AIBadge,
+  MarkdownSection,
+  MarkdownContent,
+  KeyPoints,
+  Actions,
+  RefreshButton,
+} from "./styles";
+
 interface SummaryViewProps {
   summary: string;
   keyPoints: string[];
@@ -14,27 +24,28 @@ export function SummaryView({
   renderInlineMarkdown,
 }: SummaryViewProps) {
   return (
-    <div className="sumpage-result">
-      <div className="sumpage-ai-badge">AI Generated</div>
-      <div
-        className="sumpage-markdown-section sumpage-markdown-content"
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
-      />
+    <ResultContainer>
+      <AIBadge>AI Generated</AIBadge>
+      <MarkdownSection>
+        <MarkdownContent
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
+        />
+      </MarkdownSection>
       {keyPoints.length > 0 && (
-        <div className="sumpage-markdown-section">
+        <MarkdownSection>
           <h3>Key Points</h3>
-          <ul className="sumpage-key-points">
+          <KeyPoints>
             {keyPoints.map((point, index) => (
               <li key={index} dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(point) }} />
             ))}
-          </ul>
-        </div>
+          </KeyPoints>
+        </MarkdownSection>
       )}
-      <div className="sumpage-actions">
-        <button className="sumpage-refresh-btn" onClick={onRegenerate}>
+      <Actions>
+        <RefreshButton onClick={onRegenerate}>
           Regenerate
-        </button>
-      </div>
-    </div>
+        </RefreshButton>
+      </Actions>
+    </ResultContainer>
   );
 }

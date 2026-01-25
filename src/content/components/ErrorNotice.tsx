@@ -1,3 +1,5 @@
+import { ErrorContainer, RetryButton } from "./styles";
+
 interface ErrorNoticeProps {
   message: string;
   onRetry: () => void;
@@ -5,11 +7,11 @@ interface ErrorNoticeProps {
 
 export function ErrorNotice({ message, onRetry }: ErrorNoticeProps) {
   return (
-    <div className="sumpage-error">
+    <ErrorContainer>
       <p>{message}</p>
-      <button className="sumpage-retry-btn" onClick={onRetry}>
+      <RetryButton onClick={onRetry}>
         Retry
-      </button>
-    </div>
+      </RetryButton>
+    </ErrorContainer>
   );
 }

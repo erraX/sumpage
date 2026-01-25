@@ -1,3 +1,5 @@
+import { Header, HeaderTitle, NewChatButton, CloseButton } from "./styles";
+
 interface SidebarHeaderProps {
   title: string;
   onClose: () => void;
@@ -12,16 +14,16 @@ export function SidebarHeader({
   onNewChat,
 }: SidebarHeaderProps) {
   return (
-    <div className="sumpage-sidebar-header">
-      <h2 className="sumpage-sidebar-title">{title}</h2>
+    <Header>
+      <HeaderTitle>{title}</HeaderTitle>
       {showNewChat && onNewChat && (
-        <button className="sumpage-new-chat-btn" onClick={onNewChat} title="New Chat">
+        <NewChatButton onClick={onNewChat} title="New Chat">
           +
-        </button>
+        </NewChatButton>
       )}
-      <button className="sumpage-close-btn" onClick={onClose}>
+      <CloseButton onClick={onClose}>
         <span style={{ color: "white", fontSize: "18px", lineHeight: 1 }}>×</span>
-      </button>
-    </div>
+      </CloseButton>
+    </Header>
   );
 }
