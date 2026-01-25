@@ -2,11 +2,7 @@
  * Templates storage module - Handles all prompt template persistence
  */
 import type { PromptTemplate } from '../../types';
-import {
-  getStorageValue,
-  setStorageValue,
-  isChromeStorageAvailable,
-} from './storage';
+import { getStorageValue, setStorageValue, isChromeStorageAvailable } from './storage';
 import { DEFAULT_PROMPT_TEMPLATE } from '../../types';
 
 // Storage keys
@@ -155,9 +151,7 @@ export async function setDefaultPromptTemplate(id: string): Promise<boolean> {
 }
 
 // Initialize default templates if not present
-export async function initializePromptTemplates(
-  defaultTemplate: PromptTemplate
-): Promise<void> {
+export async function initializePromptTemplates(defaultTemplate: PromptTemplate): Promise<void> {
   if (!isChromeStorageAvailable()) {
     return;
   }

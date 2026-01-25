@@ -435,6 +435,10 @@ export function injectSidebar() {
     if (panelOpen) closePanel();
     else openPanel(false);
   });
+
+  setTimeout(() => {
+    openPanel(false);
+  });
 }
 
 // Auto-inject when script loads

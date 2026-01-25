@@ -53,6 +53,7 @@ export function SidebarApp({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Zustand stores
+  const settingStore = useSettingsStore();
   const { messages, inputValue, isLoading: chatLoading } = useChatStore();
   const hasChat = messages.length > 0;
   const {
@@ -72,7 +73,11 @@ export function SidebarApp({
   const aiSummary = useAISummary(messages);
 
   // Initialize on mount
+  const initialized = useRef(false);
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     templatesStorage.initializePromptTemplates(DEFAULT_PROMPT_TEMPLATE).then(async () => {
       await checkConfiguration({ closeIfConfigured: true });
       await loadTemplates();
@@ -83,11 +88,13 @@ export function SidebarApp({
         const prompt = await templatesStorage.getPromptTemplate(promptId);
         if (prompt) {
           setSelectedPromptName(prompt.name);
+          settingStore.setSelectedPromptIdState(promptId);
         }
       } else {
         const defaultPrompt = templates.find((t) => t.isDefault);
         if (defaultPrompt) {
           setSelectedPromptName(defaultPrompt.name);
+          settingStore.setSelectedPromptIdState(defaultPrompt.id);
         }
       }
     });
@@ -194,7 +201,7 @@ export function SidebarApp({
                 loading={isLoading}
                 templates={templates}
                 onSelectTemplate={selectTemplate}
-                selectedTemplateId={useSettingsStore.getState().selectedPromptId}
+                selectedTemplateId={settingStore.selectedPromptId}
               />
             )}
           </Container>

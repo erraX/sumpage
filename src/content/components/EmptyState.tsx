@@ -36,6 +36,9 @@ export const EmptyState = memo(function EmptyState({
   inputValue: initialValue = '',
   onInputChange,
 }: EmptyStateProps) {
+  console.log('[empty-state] templates', templates);
+  console.log('[empty-state] selectedTemplateId', selectedTemplateId);
+
   const [inputValue, setInputValue] = useState<string>(initialValue);
 
   // Sync internal state with prop
