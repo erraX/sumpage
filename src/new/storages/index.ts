@@ -27,17 +27,16 @@ export {
 
 // Re-export provider config storage
 export {
-  getConfig,
-  saveConfig,
-  clearConfig,
-  isConfigured,
   getConfigs,
   saveConfigs,
-  getConfigById,
-  addConfig,
+  clearConfigs,
+  getConfig,
+  saveConfig,
   updateConfig,
   deleteConfig,
-  findByApiKey,
+  isProviderConfigured,
+  isAnyConfigured,
+  getConfiguredProviders,
   initialize as initializeConfigs,
 } from './providerConfigStorage';
 

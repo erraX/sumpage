@@ -19,8 +19,11 @@ export type PromptTemplateStore = PromptTemplate[];
 
 // ============ Provider Config ============
 
+export type ProviderType = 'openai' | 'anthropic' | 'deepseek' | 'minimax' | 'gemini';
+
 export interface ProviderConfig {
   id: string;
+  provider: ProviderType;
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -28,7 +31,7 @@ export interface ProviderConfig {
   temperature: number;
 }
 
-export type ProviderConfigStore = ProviderConfig[];
+export type ProviderConfigStore = Record<ProviderType, ProviderConfig>;
 
 // ============ Global Settings ============
 

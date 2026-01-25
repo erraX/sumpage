@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { PromptTemplate, ProviderConfig } from "../../new/models";
+import type { PromptTemplate } from "../../new/models";
 import {
   getConfig,
   saveConfig,
@@ -99,7 +99,7 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
   }, []);
 
   const loadConfig = async () => {
-    const config = await getConfig();
+    const config = await getConfig('deepseek');
     if (config) {
       setBaseUrl(config.baseUrl);
       setApiKey(config.apiKey);
@@ -147,15 +147,13 @@ export function SidebarSettings({ onComplete, onBack }: SidebarSettingsProps) {
     setError(null);
 
     try {
-      const config: ProviderConfig = {
-        id: `prov-${Date.now()}`,
+      await saveConfig('deepseek', {
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
         model: "deepseek-chat",
         maxTokens: maxTokensNum,
         temperature: tempNum,
-      };
-      await saveConfig(config);
+      });
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
