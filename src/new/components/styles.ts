@@ -1,5 +1,4 @@
 import styled from '@emotion/styled';
-import { css } from '@emotion/react';
 
 const theme = {
   font: '"Space Grotesk", "Trebuchet MS", sans-serif',
@@ -25,6 +24,7 @@ export const ProviderTabsContainer = styled.div`
   gap: 8px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  align-items: center;
 `;
 
 export const ProviderTabButton = styled.button<{ $active?: boolean }>`
@@ -44,6 +44,11 @@ export const ProviderTabButton = styled.button<{ $active?: boolean }>`
     border-color: ${theme.accent};
   }
 
+  &:focus-visible {
+    outline: 2px solid ${theme.accent};
+    outline-offset: 2px;
+  }
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -55,166 +60,20 @@ export const ProviderFormGroup = styled.div`
   margin-bottom: 16px;
 `;
 
-export const ProviderLabel = styled.label`
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: ${theme.muted};
-  margin-bottom: 6px;
-`;
-
-export const ProviderInput = styled.input`
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid ${theme.border};
-  background: ${theme.white};
-  font-family: ${theme.font};
-  font-size: 14px;
-  color: ${theme.ink};
-  box-sizing: border-box;
-  transition: border-color 0.15s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${theme.accent};
-    box-shadow: 0 0 0 3px ${theme.accentSoft};
-  }
-
-  &:disabled {
-    background: ${theme.bg};
-    cursor: not-allowed;
-  }
-
-  &::placeholder {
-    color: ${theme.muted};
-  }
-`;
-
-export const ProviderSelect = styled.select`
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid ${theme.border};
-  background: ${theme.white};
-  font-family: ${theme.font};
-  font-size: 14px;
-  color: ${theme.ink};
-  box-sizing: border-box;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: ${theme.accent};
-    box-shadow: 0 0 0 3px ${theme.accentSoft};
-  }
-`;
-
-// Buttons
-const buttonBase = css`
-  width: 100%;
-  padding: 12px 20px;
-  border-radius: 10px;
-  border: none;
-  font-family: ${theme.font};
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-`;
-
-export const ProviderButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
-  ${buttonBase}
-  background: ${props => {
-    switch (props.$variant) {
-      case 'secondary': return theme.white;
-      case 'danger': return theme.warningText;
-      default: return theme.accent;
-    }
-  }};
-  color: ${props => {
-    switch (props.$variant) {
-      case 'secondary': return theme.ink;
-      default: return theme.white;
-    }
-  }};
-  border: ${props => props.$variant === 'secondary' ? `1px solid ${theme.border}` : 'none'};
-
-  &:hover:not(:disabled) {
-    background: ${props => {
-      switch (props.$variant) {
-        case 'secondary': return theme.bg;
-        case 'danger': return '#d45540';
-        default: return theme.accentStrong;
-      }
-    }};
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-export const ButtonRow = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-`;
-
-// Messages
-export const ProviderError = styled.div`
-  background: ${theme.warningBg};
-  border: 1px solid ${theme.warningBorder};
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-
-  p {
-    margin: 0;
-    color: ${theme.warningText};
-    font-size: 13px;
-  }
-`;
-
-export const ProviderSuccess = styled.div`
-  background: ${theme.successSoft};
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-
-  p {
-    margin: 0;
-    color: ${theme.success};
-    font-size: 13px;
-    font-weight: 500;
-  }
-`;
-
 // Layout
 export const ProviderContainer = styled.div`
   padding: 16px;
 `;
 
-export const ProviderContent = styled.div`
-  background: ${theme.surface};
-  border-radius: 12px;
-  padding: 20px;
-`;
+export const ButtonRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-top: 24px;
 
-export const ProviderHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-`;
-
-export const ProviderTitle = styled.h2`
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: ${theme.ink};
-  font-family: ${theme.font};
+  @media (max-width: 360px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const AdvancedToggle = styled.button`
@@ -225,9 +84,16 @@ export const AdvancedToggle = styled.button`
   font-size: 13px;
   cursor: pointer;
   padding: 0;
+  margin-top: 8px;
 
   &:hover {
     text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${theme.accent};
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 `;
 
@@ -241,4 +107,15 @@ export const GridRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const EmptyState = styled.p`
+  color: ${theme.muted};
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
 `;

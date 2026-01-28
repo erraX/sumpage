@@ -1,6 +1,24 @@
 import { useEffect, useState } from 'react';
 import type { ProviderConfig, ProviderType } from '../models';
 import * as storage from '../storages/providerConfigStorage';
+import {
+  Button,
+  Input,
+  Label,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Alert,
+  AlertDescription,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectViewport,
+  SelectItem,
+  SelectItemText,
+} from '../../lib/components/ui';
 import * as S from './styles';
 
 const PROVIDERS: { type: ProviderType; label: string }[] = [
@@ -91,7 +109,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     setSuccess(false);
   };
 
-  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
   };
 
@@ -153,6 +171,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const handleDelete = async () => {
     if (!selectedProvider) return;
 
+    setError(null);
+    setSuccess(false);
     setIsLoading(true);
     try {
       await storage.deleteConfig(selectedProvider);
@@ -177,145 +197,155 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
   return (
     <S.ProviderContainer>
-      <S.ProviderContent>
-        <S.ProviderHeader>
-          <S.ProviderTitle>Provider Configuration</S.ProviderTitle>
-        </S.ProviderHeader>
-
-        {/* Provider Tabs */}
-        <S.ProviderTabsContainer>
-          {PROVIDERS.map(({ type, label }) => (
-            <S.ProviderTabButton
-              key={type}
-              $active={selectedProvider === type}
-              onClick={() => handleProviderSelect(type)}
-            >
-              {label}
-            </S.ProviderTabButton>
-          ))}
-        </S.ProviderTabsContainer>
-
-        {selectedProvider ? (
-          <>
-            {/* Provider Type Selector */}
-            <S.ProviderFormGroup>
-              <S.ProviderLabel>Provider</S.ProviderLabel>
-              <S.ProviderSelect
-                value={selectedProvider}
-                disabled={!!existingConfig}
-                onChange={e => handleProviderSelect(e.target.value as ProviderType)}
+      <Card>
+        <CardHeader>
+          <CardTitle>Provider Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Provider Tabs */}
+          <S.ProviderTabsContainer>
+            {PROVIDERS.map(({ type, label }) => (
+              <S.ProviderTabButton
+                key={type}
+                $active={selectedProvider === type}
+                onClick={() => handleProviderSelect(type)}
               >
-                {PROVIDERS.map(({ type, label }) => (
-                  <option key={type} value={type}>
-                    {label}
-                  </option>
-                ))}
-              </S.ProviderSelect>
-            </S.ProviderFormGroup>
+                {label}
+              </S.ProviderTabButton>
+            ))}
+          </S.ProviderTabsContainer>
 
-            {/* Base URL */}
-            <S.ProviderFormGroup>
-              <S.ProviderLabel>API Base URL</S.ProviderLabel>
-              <S.ProviderInput
-                type="url"
-                value={formData.baseUrl}
-                onChange={handleInputChange('baseUrl')}
-                placeholder="https://api.example.com/v1"
-                disabled={isLoading}
-              />
-            </S.ProviderFormGroup>
+          {selectedProvider ? (
+            <>
+              {/* Provider Type Selector */}
+              <S.ProviderFormGroup>
+                <Label>Provider</Label>
+                <Select value={selectedProvider} onValueChange={(v: string) => handleProviderSelect(v as ProviderType)}>
+                  <SelectTrigger disabled={!!existingConfig}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectViewport>
+                      {PROVIDERS.map(({ type, label }) => (
+                        <SelectItem key={type} value={type}>
+                          <SelectItemText>{label}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
+              </S.ProviderFormGroup>
 
-            {/* API Key */}
-            <S.ProviderFormGroup>
-              <S.ProviderLabel>API Key</S.ProviderLabel>
-              <S.ProviderInput
-                type="password"
-                value={formData.apiKey}
-                onChange={handleInputChange('apiKey')}
-                placeholder="sk-..."
-                disabled={isLoading}
-              />
-            </S.ProviderFormGroup>
-
-            {/* Model */}
-            <S.ProviderFormGroup>
-              <S.ProviderLabel>Model</S.ProviderLabel>
-              <S.ProviderInput
-                type="text"
-                value={formData.model}
-                onChange={handleInputChange('model')}
-                placeholder="Model name"
-                disabled={isLoading}
-              />
-            </S.ProviderFormGroup>
-
-            {/* Advanced Toggle */}
-            <S.AdvancedToggle onClick={() => setShowAdvanced(!showAdvanced)}>
-              {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-            </S.AdvancedToggle>
-
-            {/* Advanced Settings */}
-            {showAdvanced && (
-              <S.AdvancedSettings>
-                <S.GridRow>
-                  <S.ProviderFormGroup>
-                    <S.ProviderLabel>Max Tokens</S.ProviderLabel>
-                    <S.ProviderInput
-                      type="text"
-                      value={formData.maxTokens}
-                      onChange={handleInputChange('maxTokens')}
-                      disabled={isLoading}
-                    />
-                  </S.ProviderFormGroup>
-                  <S.ProviderFormGroup>
-                    <S.ProviderLabel>Temperature</S.ProviderLabel>
-                    <S.ProviderInput
-                      type="text"
-                      value={formData.temperature}
-                      onChange={handleInputChange('temperature')}
-                      disabled={isLoading}
-                    />
-                  </S.ProviderFormGroup>
-                </S.GridRow>
-              </S.AdvancedSettings>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <S.ProviderError>
-                <p>{error}</p>
-              </S.ProviderError>
-            )}
-
-            {/* Success Message */}
-            {success && (
-              <S.ProviderSuccess>
-                <p>{existingConfig ? 'Configuration updated!' : 'Configuration saved!'}</p>
-              </S.ProviderSuccess>
-            )}
-
-            {/* Actions */}
-            <S.ButtonRow>
-              <S.ProviderButton onClick={handleSave} disabled={isLoading}>
-                {isLoading ? 'Saving...' : existingConfig ? 'Update' : 'Save'}
-              </S.ProviderButton>
-              {existingConfig && (
-                <S.ProviderButton
-                  $variant="danger"
-                  onClick={handleDelete}
+              {/* Base URL */}
+              <S.ProviderFormGroup>
+                <Label>API Base URL</Label>
+                <Input
+                  type="url"
+                  value={formData.baseUrl}
+                  onChange={handleInputChange('baseUrl')}
+                  placeholder="https://api.example.com/v1"
                   disabled={isLoading}
-                >
-                  Delete
-                </S.ProviderButton>
+                />
+              </S.ProviderFormGroup>
+
+              {/* API Key */}
+              <S.ProviderFormGroup>
+                <Label>API Key</Label>
+                <Input
+                  type="password"
+                  value={formData.apiKey}
+                  onChange={handleInputChange('apiKey')}
+                  placeholder="sk-..."
+                  disabled={isLoading}
+                />
+              </S.ProviderFormGroup>
+
+              {/* Model */}
+              <S.ProviderFormGroup>
+                <Label>Model</Label>
+                <Input
+                  type="text"
+                  value={formData.model}
+                  onChange={handleInputChange('model')}
+                  placeholder="Model name"
+                  disabled={isLoading}
+                />
+              </S.ProviderFormGroup>
+
+              {/* Advanced Toggle */}
+              <S.AdvancedToggle onClick={() => setShowAdvanced(prev => !prev)}>
+                {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+              </S.AdvancedToggle>
+
+              {/* Advanced Settings */}
+              {showAdvanced && (
+                <S.AdvancedSettings>
+                  <S.GridRow>
+                    <S.ProviderFormGroup>
+                      <Label>Max Tokens</Label>
+                      <Input
+                        type="text"
+                        value={formData.maxTokens}
+                        onChange={handleInputChange('maxTokens')}
+                        disabled={isLoading}
+                      />
+                    </S.ProviderFormGroup>
+                    <S.ProviderFormGroup>
+                      <Label>Temperature</Label>
+                      <Input
+                        type="text"
+                        value={formData.temperature}
+                        onChange={handleInputChange('temperature')}
+                        disabled={isLoading}
+                      />
+                    </S.ProviderFormGroup>
+                  </S.GridRow>
+                </S.AdvancedSettings>
               )}
-            </S.ButtonRow>
-          </>
-        ) : (
-          <p style={{ color: '#5d6b68', fontSize: '14px', textAlign: 'center' }}>
-            Select a provider to configure
-          </p>
-        )}
-      </S.ProviderContent>
+
+              {/* Error Message */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <Alert variant="success">
+                  <AlertDescription>
+                    {existingConfig ? 'Configuration updated!' : 'Configuration saved!'}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Actions */}
+              <S.ButtonRow>
+                <Button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  data-variant="default"
+                  data-size="default"
+                >
+                  {isLoading ? 'Saving...' : existingConfig ? 'Update' : 'Save'}
+                </Button>
+                {existingConfig && (
+                  <Button
+                    onClick={handleDelete}
+                    disabled={isLoading}
+                    data-variant="destructive"
+                    data-size="default"
+                  >
+                    Delete
+                  </Button>
+                )}
+              </S.ButtonRow>
+            </>
+          ) : (
+            <S.EmptyState>Select a provider to configure</S.EmptyState>
+          )}
+        </CardContent>
+      </Card>
     </S.ProviderContainer>
   );
 }
