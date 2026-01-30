@@ -3,6 +3,7 @@
 
 import { createToggleButton } from '../lib/sidebar/toggle-button';
 import { createPanel } from '../lib/sidebar/panel';
+import type { PanelResult } from '../lib/sidebar/types';
 
 // Prevent multiple injections
 let injected = false;
@@ -17,44 +18,22 @@ export function injectSidebar() {
   document.body.appendChild(buttonHost);
   const buttonShadow = buttonHost.attachShadow({ mode: 'open' });
 
-  // Panel state
-  let panelOpen = false;
-  let panelResult: ReturnType<typeof createPanel> | null = null;
-
   // Create toggle button
   createToggleButton(buttonShadow, {
     onPositionChange: () => {},
-    onClick: () => {
-      if (panelOpen && panelResult) {
-        // Panel exists, close it
-        panelResult.close();
-        panelOpen = false;
-        panelResult = null;
-      } else {
-        // Open panel
-        openPanel();
-      }
-    },
+    onClick: openPanel,
   });
 
-  // Open panel function (creates panel in its own shadow root)
-  function openPanel(showSettings = false) {
-    if (panelOpen) return;
-    panelOpen = true;
-
-    panelResult = createPanel({
-      showSettings,
-      onClose: () => {
-        panelOpen = false;
-        panelResult = null;
-      },
-    });
+  let panel: PanelResult | null = null;
+  function openPanel() {
+    if (!panel) {
+      panel = createPanel();
+    }
+    panel.open();
   }
 
   // Auto-open panel on load if no provider configured
-  setTimeout(() => {
-    openPanel(false);
-  }, 0);
+  setTimeout(openPanel, 0);
 }
 
 // Auto-inject when script loads

@@ -11,6 +11,9 @@ export function setupOutsideClick(
   const handler = (e: MouseEvent) => {
     if (ignoreNextClick) return;
 
+    const target = e.target as Node;
+    if (!target) return;
+
     // Use composedPath to properly traverse shadow DOM boundaries
     const path = e.composedPath();
 
@@ -18,7 +21,7 @@ export function setupOutsideClick(
     const pathIncludesRadixSelect = path.some((node) => {
       if (!(node instanceof Element)) return false;
       const attrNames = node.getAttributeNames();
-      if (attrNames.some((name) => name.startsWith('data-radix-select'))) {
+      if (attrNames.some((name) => name.startsWith('data-radix'))) {
         return true;
       }
       // Also guard on common roles Radix applies to content/viewport/items
@@ -27,10 +30,17 @@ export function setupOutsideClick(
     });
     if (pathIncludesRadixSelect) return;
 
-    // Check if any element in the path is one of our tracked elements
+    // Check if click is inside any of our tracked elements (handles shadow DOM via contains)
     for (const element of elements) {
-      if (element && path.includes(element)) {
-        return;
+      if (element) {
+        // For shadow DOM elements, use contains which properly crosses shadow boundaries
+        if (element.contains(target)) {
+          return;
+        }
+        // Also check if the element is in the composed path (for portal scenarios)
+        if (path.includes(element)) {
+          return;
+        }
       }
     }
 

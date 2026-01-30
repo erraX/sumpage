@@ -7,14 +7,12 @@ import { SidebarApp } from '../../../content/SidebarApp';
 import { PANEL_STYLES, COMPONENT_STYLES } from './panelStyles';
 import { setupOutsideClick } from '../outsideClick';
 
-export function createPanel(options: PanelOptions): PanelResult {
+export function createPanel(options: PanelOptions = {}): PanelResult {
   // Create panel host with its own shadow root
   const host = document.createElement('div');
   host.id = 'sumpage-panel-host';
   document.body.appendChild(host);
   const panelShadow = host.attachShadow({ mode: 'open' });
-
-  const initialShowSettings = options.showSettings ?? false;
 
   // Inject styles
   const globalStyle = document.createElement('style');
@@ -35,22 +33,16 @@ export function createPanel(options: PanelOptions): PanelResult {
   });
 
   // Track if already closed
-  let isClosed = false;
   const panelRoot = createRoot(panel);
 
   // Close function (use function declaration for hoisting)
   const closePanel = () => {
-    if (isClosed) return;
-    isClosed = true;
+    if (!panel.classList.contains('sumpage-panel-open')) return;
 
     cleanupOutsideClick();
     options.onClose?.();
 
     panel.classList.remove('sumpage-panel-open');
-    setTimeout(() => {
-      panelRoot.unmount();
-      host.remove();
-    }, 300);
   };
 
   // Outside click handler
@@ -63,28 +55,21 @@ export function createPanel(options: PanelOptions): PanelResult {
       { value: cache },
       React.createElement(SidebarApp, {
         onClose: closePanel,
-        initialShowSettings,
       })
     )
   );
 
   // Animation
-  if (options.disableAnimation) {
-    panel.style.transition = 'none';
+  requestAnimationFrame(() => {
     panel.classList.add('sumpage-panel-open');
-    requestAnimationFrame(() => {
-      panel.style.transition = '';
-    });
-  } else {
-    requestAnimationFrame(() => {
-      panel.classList.add('sumpage-panel-open');
-    });
-  }
+  });
 
   // Event handlers are now managed inside React components
 
   return {
-    panel,
+    open: () => {
+      panel.classList.add('sumpage-panel-open');
+    },
     close: closePanel,
     cleanup: () => {
       // Event handlers are managed by React; no DOM listeners to remove here

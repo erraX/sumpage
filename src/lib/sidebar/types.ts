@@ -15,13 +15,11 @@ export interface ToggleButtonHandlers {
 }
 
 export interface PanelOptions {
-  showSettings?: boolean;
-  disableAnimation?: boolean;
   onClose?: () => void;
 }
 
 export interface PanelResult {
-  panel: HTMLElement;
   close: () => void;
+  open: () => void;
   cleanup: () => void;
 }

@@ -12,13 +12,9 @@ import { SummaryStarter } from './components/SummaryStarter';
 
 interface SidebarAppProps {
   onClose: () => void;
-  initialShowSettings?: boolean;
 }
 
-export function SidebarApp({
-  onClose,
-  initialShowSettings = false,
-}: SidebarAppProps) {
+export function SidebarApp({ onClose }: SidebarAppProps) {
   const [isInitingApp, setIsInitingApp] = useState(true);
   const hasInitialized = useRef(false);
 
@@ -27,15 +23,6 @@ export function SidebarApp({
   const globalSettings = useGlobalSettings();
   const { settingPageVisible, showSettingPage, hideSettingPage } =
     useGlobalUiState();
-
-  // Sync initial settings visibility from the panel options
-  useEffect(() => {
-    if (initialShowSettings) {
-      showSettingPage();
-    } else {
-      hideSettingPage();
-    }
-  }, [initialShowSettings, showSettingPage, hideSettingPage]);
 
   // Initialize on mount (guarded so it only runs once even if dependencies change)
   useEffect(() => {
@@ -79,18 +66,18 @@ export function SidebarApp({
 
   return (
     <>
-      <div className="sumpage-panel-header">
+      <div className='sumpage-panel-header'>
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
           }}
         >
           <h2 style={{ margin: 0 }}>Sumpage</h2>
           <button
-            className="sumpage-panel-btn"
-            title="Settings"
+            className='sumpage-panel-btn'
+            title='Settings'
             onClick={handleToggleSettings}
             aria-pressed={settingPageVisible}
           >
@@ -98,15 +85,15 @@ export function SidebarApp({
           </button>
         </div>
         <button
-          className="sumpage-panel-btn sumpage-panel-btn-close"
+          className='sumpage-panel-btn sumpage-panel-btn-close'
           onClick={onClose}
-          aria-label="Close sidebar"
+          aria-label='Close sidebar'
         >
           ×
         </button>
       </div>
 
-      <div className="sumpage-panel-content">
+      <div className='sumpage-panel-content'>
         <Host>
           {isInitingApp && <div>loading...</div>}
           {settingPageVisible && (
