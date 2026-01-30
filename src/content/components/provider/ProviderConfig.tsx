@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { ProviderConfig, ProviderType } from '../models';
-import * as storage from '../storages/providerConfigStorage';
-import { useGlobalSettings, useProviderConfigs } from '../stores';
+import type { ProviderConfig, ProviderType } from '../../models';
+import * as storage from '../../storages/providerConfigStorage';
+import { useGlobalSettings, useProviderConfigs } from '../../stores';
 import {
   Button,
   Input,
@@ -12,7 +12,7 @@ import {
   CardContent,
   Alert,
   AlertDescription,
-} from '../../lib/components/ui';
+} from '../../../lib/components/ui';
 import * as S from './styles';
 
 const PROVIDERS: { type: ProviderType; label: string }[] = [

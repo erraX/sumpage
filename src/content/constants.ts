@@ -1,4 +1,4 @@
-import { PromptTemplate } from '../new/models';
+import { PromptTemplate } from './models';
 
 export const DEFAULT_PROMPT_TEMPLATE: PromptTemplate = {
   id: 'default',

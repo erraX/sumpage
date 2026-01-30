@@ -6,8 +6,8 @@ import {
   useProviderConfigs,
   useGlobalSettings,
   useGlobalUiState,
-} from '../new/stores';
-import { ProviderConfig } from '../new/components/ProviderConfig';
+} from './stores';
+import { ProviderConfig } from './components/provider/ProviderConfig';
 
 interface SidebarAppProps {
   onClose: () => void;

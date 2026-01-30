@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { AISummary, ChatMessage } from "../../new/models";
-import { useChatSession } from "../../new/stores/useChatSession";
+import type { AISummary, ChatMessage } from "../models";
+import { useChatSession } from "../stores/useChatSession";
 import { useUIStore } from "../stores/uiStore";
-import { getChatHistory, saveChatHistory } from "../../new/storages/chatHistoryStorage";
+import { getChatHistory, saveChatHistory } from "../storages/chatHistoryStorage";
 
 interface UseSummarizerReturn {
   summarize: (promptId?: string) => Promise<void>;

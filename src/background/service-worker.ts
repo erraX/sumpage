@@ -5,7 +5,7 @@ import type {
   PromptTemplate,
   BackgroundMessage,
   ProviderConfig,
-} from "../new/models";
+} from "../content/models";
 
 const MAX_CONTENT_LENGTH = 12000;
 
