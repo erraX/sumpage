@@ -17,9 +17,13 @@ export function setupOutsideClick(
     // Ignore clicks inside Radix Select portals (to prevent closing panel when opening selects)
     const pathIncludesRadixSelect = path.some((node) => {
       if (!(node instanceof Element)) return false;
-      return Object.keys(node.dataset).some((key) =>
-        key.startsWith('radixSelect')
-      );
+      const attrNames = node.getAttributeNames();
+      if (attrNames.some((name) => name.startsWith('data-radix-select'))) {
+        return true;
+      }
+      // Also guard on common roles Radix applies to content/viewport/items
+      const role = node.getAttribute('role');
+      return role === 'listbox' || role === 'option' || role === 'combobox';
     });
     if (pathIncludesRadixSelect) return;
 
