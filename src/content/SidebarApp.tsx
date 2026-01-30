@@ -8,6 +8,7 @@ import {
   useGlobalUiState,
 } from './stores';
 import { ProviderConfig } from './components/provider/ProviderConfig';
+import { SummaryStarter } from './components/SummaryStarter';
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -111,7 +112,9 @@ export function SidebarApp({
           {settingPageVisible && (
             <ProviderConfig onComplete={hideSettingPage} />
           )}
-          {!settingPageVisible && <div>Hello world</div>}
+          {!settingPageVisible && (
+            <SummaryStarter onOpenSettings={showSettingPage} />
+          )}
         </Host>
       </div>
     </>

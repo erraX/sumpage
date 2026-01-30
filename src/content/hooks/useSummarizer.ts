@@ -5,7 +5,7 @@ import { useUIStore } from "../stores/uiStore";
 import { getChatHistory, saveChatHistory } from "../storages/chatHistoryStorage";
 
 interface UseSummarizerReturn {
-  summarize: (promptId?: string) => Promise<void>;
+  summarize: (promptId?: string, templateOverride?: string) => Promise<void>;
   summarizeWithTemplate: (template: string) => Promise<void>;
   extractPageContent: () => Promise<{ title: string; url: string; textContent: string } | null>;
   checkConfiguration: (options?: { closeIfConfigured?: boolean }) => Promise<boolean>;
@@ -69,7 +69,7 @@ export function useSummarizer(): UseSummarizerReturn {
   );
 
   const summarize = useCallback(
-    async (promptId?: string) => {
+    async (promptId?: string, templateOverride?: string) => {
       const content = await extractPageContent();
       if (!content) return;
 
@@ -100,6 +100,7 @@ export function useSummarizer(): UseSummarizerReturn {
             title: content.title,
             textContent: content.textContent,
             promptId,
+            promptTemplate: templateOverride,
           },
         });
 
