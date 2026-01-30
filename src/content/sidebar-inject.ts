@@ -4,6 +4,7 @@
 import { createToggleButton } from '../lib/sidebar/toggle-button';
 import { createPanel } from '../lib/sidebar/panel';
 import type { PanelResult } from '../lib/sidebar/types';
+import { ShadowDom } from '../inject/ShadowDom';
 
 // Prevent multiple injections
 let injected = false;
@@ -13,13 +14,11 @@ export function injectSidebar() {
   injected = true;
 
   // Create button host with its own shadow root
-  const buttonHost = document.createElement('div');
-  buttonHost.id = 'sumpage-sidebar-host';
-  document.body.appendChild(buttonHost);
-  const buttonShadow = buttonHost.attachShadow({ mode: 'open' });
+  const button = new ShadowDom('sumpage-sidebar-button-host');
+  button.mount();
 
   // Create toggle button
-  createToggleButton(buttonShadow, {
+  createToggleButton(button.getShadow()!, {
     onPositionChange: () => {},
     onClick: openPanel,
   });
