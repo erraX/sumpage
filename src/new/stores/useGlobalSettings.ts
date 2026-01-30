@@ -22,7 +22,7 @@ interface Actions {
 
 export const useGlobalSettings = create<State & Actions>((set, get) => ({
   settings: {
-    providerId: '',
+    providerType: null,
     promptTemplateId: '',
     toggleButtonPosition: { bottom: 20, right: 20 },
   },

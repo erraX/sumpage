@@ -9,7 +9,7 @@ const STORAGE_KEY = 'globalSettings';
 const SELECTED_PROMPT_ID_KEY = 'selectedPromptId';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
-  providerId: '',
+  providerType: null,
   promptTemplateId: '',
   toggleButtonPosition: { bottom: 20, right: 20 },
 };
@@ -58,8 +58,10 @@ export async function initialize(): Promise<void> {
   if (!isChromeStorageAvailable()) return;
   const current = await getSettings();
   // Only save if we got the default fallback (no stored value)
-  if (current.providerId === DEFAULT_SETTINGS.providerId &&
-      current.promptTemplateId === DEFAULT_SETTINGS.promptTemplateId) {
+  if (
+    current.providerType === DEFAULT_SETTINGS.providerType &&
+    current.promptTemplateId === DEFAULT_SETTINGS.promptTemplateId
+  ) {
     await saveSettings(DEFAULT_SETTINGS);
   }
 }
@@ -84,6 +86,9 @@ export async function setSelectedPromptId(id: string | null): Promise<void> {
       await setValue(SELECTED_PROMPT_ID_KEY, id);
     }
   } catch (error) {
-    console.error('[GlobalSettingsStorage] Failed to set selected prompt ID:', error);
+    console.error(
+      '[GlobalSettingsStorage] Failed to set selected prompt ID:',
+      error
+    );
   }
 }

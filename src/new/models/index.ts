@@ -19,7 +19,12 @@ export type PromptTemplateStore = PromptTemplate[];
 
 // ============ Provider Config ============
 
-export type ProviderType = 'openai' | 'anthropic' | 'deepseek' | 'minimax' | 'gemini';
+export type ProviderType =
+  | 'openai'
+  | 'anthropic'
+  | 'deepseek'
+  | 'minimax'
+  | 'gemini';
 
 export interface ProviderConfig {
   id: string;
@@ -41,7 +46,7 @@ export interface ToggleButtonPosition {
 }
 
 export interface GlobalSettings {
-  providerId: string;
+  providerType: ProviderType | null;
   promptTemplateId: string;
   toggleButtonPosition: ToggleButtonPosition;
 }
@@ -89,9 +94,7 @@ export interface PageSummary {
 
 // ============ Message Types ============
 
-export type BackgroundMessageType =
-  | 'SUMMARIZE_WITH_DEEPSEEK'
-  | 'CHAT_WITH_AI';
+export type BackgroundMessageType = 'SUMMARIZE_WITH_DEEPSEEK' | 'CHAT_WITH_AI';
 
 export interface BackgroundMessage {
   type: BackgroundMessageType;

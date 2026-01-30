@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ProviderConfig, ProviderType } from '../models';
 import * as storage from '../storages/providerConfigStorage';
+import { useGlobalSettings, useProviderConfigs } from '../stores';
 import {
   Button,
   Input,
@@ -11,13 +12,6 @@ import {
   CardContent,
   Alert,
   AlertDescription,
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectViewport,
-  SelectItem,
-  SelectItemText,
 } from '../../lib/components/ui';
 import * as S from './styles';
 
@@ -29,7 +23,10 @@ const PROVIDERS: { type: ProviderType; label: string }[] = [
   { type: 'gemini', label: 'Gemini' },
 ];
 
-const PROVIDER_DEFAULTS: Record<ProviderType, { baseUrl: string; model: string }> = {
+const PROVIDER_DEFAULTS: Record<
+  ProviderType,
+  { baseUrl: string; model: string }
+> = {
   deepseek: {
     baseUrl: 'https://api.deepseek.com/v1',
     model: 'deepseek-chat',
@@ -57,8 +54,15 @@ interface ProviderConfigProps {
 }
 
 export function ProviderConfig({ onComplete }: ProviderConfigProps) {
-  const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(null);
-  const [existingConfig, setExistingConfig] = useState<ProviderConfig | null>(null);
+  const globalSettings = useGlobalSettings();
+  const providerConfigs = useProviderConfigs();
+
+  const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(
+    globalSettings.settings.providerType || null
+  );
+  const [existingConfig, setExistingConfig] = useState<ProviderConfig | null>(
+    null
+  );
   const [formData, setFormData] = useState({
     baseUrl: '',
     apiKey: '',
@@ -70,6 +74,15 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Auto-select provider on mount
+  useEffect(() => {
+    const providerToSelect =
+      globalSettings.settings.providerType || providerConfigs.selectedProvider;
+    if (providerToSelect) {
+      setSelectedProvider(providerToSelect);
+    }
+  }, [globalSettings.settings.providerType, providerConfigs.selectedProvider]);
 
   // Load config when provider changes
   useEffect(() => {
@@ -109,9 +122,10 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     setSuccess(false);
   };
 
-  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }));
-  };
+  const handleInputChange =
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    };
 
   const validate = (): string | null => {
     if (!formData.baseUrl.trim()) {
@@ -148,6 +162,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
     setIsLoading(true);
     try {
+      await globalSettings.update({ providerType: selectedProvider });
       await storage.saveConfig(selectedProvider, {
         baseUrl: formData.baseUrl.trim(),
         apiKey: formData.apiKey.trim(),
@@ -162,7 +177,9 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         onComplete?.();
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save configuration');
+      setError(
+        err instanceof Error ? err.message : 'Failed to save configuration'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +206,9 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete configuration');
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete configuration'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -217,33 +236,14 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
           {selectedProvider ? (
             <>
-              {/* Provider Type Selector */}
-              <S.ProviderFormGroup>
-                <Label>Provider</Label>
-                <Select value={selectedProvider} onValueChange={(v: string) => handleProviderSelect(v as ProviderType)}>
-                  <SelectTrigger disabled={!!existingConfig}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectViewport>
-                      {PROVIDERS.map(({ type, label }) => (
-                        <SelectItem key={type} value={type}>
-                          <SelectItemText>{label}</SelectItemText>
-                        </SelectItem>
-                      ))}
-                    </SelectViewport>
-                  </SelectContent>
-                </Select>
-              </S.ProviderFormGroup>
-
               {/* Base URL */}
               <S.ProviderFormGroup>
                 <Label>API Base URL</Label>
                 <Input
-                  type="url"
+                  type='url'
                   value={formData.baseUrl}
                   onChange={handleInputChange('baseUrl')}
-                  placeholder="https://api.example.com/v1"
+                  placeholder='https://api.example.com/v1'
                   disabled={isLoading}
                 />
               </S.ProviderFormGroup>
@@ -252,10 +252,10 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
               <S.ProviderFormGroup>
                 <Label>API Key</Label>
                 <Input
-                  type="password"
+                  type='password'
                   value={formData.apiKey}
                   onChange={handleInputChange('apiKey')}
-                  placeholder="sk-..."
+                  placeholder='sk-...'
                   disabled={isLoading}
                 />
               </S.ProviderFormGroup>
@@ -264,16 +264,18 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
               <S.ProviderFormGroup>
                 <Label>Model</Label>
                 <Input
-                  type="text"
+                  type='text'
                   value={formData.model}
                   onChange={handleInputChange('model')}
-                  placeholder="Model name"
+                  placeholder='Model name'
                   disabled={isLoading}
                 />
               </S.ProviderFormGroup>
 
               {/* Advanced Toggle */}
-              <S.AdvancedToggle onClick={() => setShowAdvanced(prev => !prev)}>
+              <S.AdvancedToggle
+                onClick={() => setShowAdvanced((prev) => !prev)}
+              >
                 {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
               </S.AdvancedToggle>
 
@@ -284,7 +286,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                     <S.ProviderFormGroup>
                       <Label>Max Tokens</Label>
                       <Input
-                        type="text"
+                        type='text'
                         value={formData.maxTokens}
                         onChange={handleInputChange('maxTokens')}
                         disabled={isLoading}
@@ -293,7 +295,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                     <S.ProviderFormGroup>
                       <Label>Temperature</Label>
                       <Input
-                        type="text"
+                        type='text'
                         value={formData.temperature}
                         onChange={handleInputChange('temperature')}
                         disabled={isLoading}
@@ -305,16 +307,18 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
               {/* Error Message */}
               {error && (
-                <Alert variant="destructive">
+                <Alert variant='destructive'>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               {/* Success Message */}
               {success && (
-                <Alert variant="success">
+                <Alert variant='success'>
                   <AlertDescription>
-                    {existingConfig ? 'Configuration updated!' : 'Configuration saved!'}
+                    {existingConfig
+                      ? 'Configuration updated!'
+                      : 'Configuration saved!'}
                   </AlertDescription>
                 </Alert>
               )}
@@ -324,8 +328,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                 <Button
                   onClick={handleSave}
                   disabled={isLoading}
-                  data-variant="default"
-                  data-size="default"
+                  data-variant='default'
+                  data-size='default'
                 >
                   {isLoading ? 'Saving...' : existingConfig ? 'Update' : 'Save'}
                 </Button>
@@ -333,8 +337,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                   <Button
                     onClick={handleDelete}
                     disabled={isLoading}
-                    data-variant="destructive"
-                    data-size="default"
+                    data-variant='destructive'
+                    data-size='default'
                   >
                     Delete
                   </Button>
