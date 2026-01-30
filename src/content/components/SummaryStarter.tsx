@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import styled from '@emotion/styled';
 import { useSummarizer } from '../hooks/useSummarizer';
 import { DEFAULT_PROMPT_TEMPLATE } from '../constants';
 import {
@@ -8,13 +9,28 @@ import {
   useUIStore,
   useGlobalUiState,
 } from '../stores';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../../lib/components/ui/card';
+import { Button } from '../../lib/components/ui/button';
+import { Label } from '../../lib/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from '../../lib/components/ui/select';
 
 interface SummaryStarterProps {
   onOpenSettings?: () => void;
 }
 
-// Simple, focused launcher for a summary session
-// - lets user pick provider + prompt and start in one click
+// SummaryStarter built with shadcn-style primitives for consistency/testability
 export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   const { summarize } = useSummarizer();
 
@@ -34,7 +50,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
     DEFAULT_PROMPT_TEMPLATE.template
   );
 
-  // Keep local selections in sync with stores after async loads
+  // Sync provider selection from store
   useEffect(() => {
     if (
       providerConfigs.selectedProvider &&
@@ -44,6 +60,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
     }
   }, [providerConfigs.selectedProvider, selectedProvider]);
 
+  // Sync prompt selection from store
   useEffect(() => {
     if (
       promptTemplates.selectedPromptId &&
@@ -53,7 +70,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
     }
   }, [promptTemplates.selectedPromptId, selectedPrompt]);
 
-  // Keep prompt text in sync with selected template; allow temporary edits after initial load
+  // Load prompt text for current selection; allow inline edits afterward
   useEffect(() => {
     const active = promptTemplates.templates.find(
       (tpl) => tpl.id === selectedPrompt
@@ -70,6 +87,8 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   }, [providerConfigs.configs]);
 
   const isReady = availableProviders.length > 0;
+  const canStart =
+    isReady && !!selectedProvider && promptText.trim().length > 0 && !uiState.isLoading;
 
   const handleStart = async () => {
     if (!selectedProvider) return;
@@ -101,120 +120,120 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   };
 
   return (
-    <div style={{ padding: '16px', display: 'grid', gap: '16px' }}>
-      <div>
-        <p style={{ margin: 0, color: '#5d6b68', fontSize: 13 }}>
-          Pick a provider and prompt, then start to summarize this page.
-        </p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Start a summary</CardTitle>
+        <HelperText>
+          Choose provider and prompt, tweak the text for this session, then go.
+        </HelperText>
+      </CardHeader>
+      <CardContent css={{ display: 'grid', gap: 16 }}>
+        <Field>
+          <Label>Provider</Label>
+          <Select
+            value={selectedProvider ?? ''}
+            onValueChange={(val) =>
+              setSelectedProvider(val as typeof selectedProvider)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  isReady ? 'Select provider' : 'No providers configured'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectViewport>
+                {availableProviders.map((cfg) => (
+                  <SelectItem key={cfg.provider} value={cfg.provider}>
+                    {cfg.provider}
+                  </SelectItem>
+                ))}
+              </SelectViewport>
+            </SelectContent>
+          </Select>
+          {!isReady && (
+            <Button
+              variant='link'
+              onClick={handleOpenSettings}
+              css={{ padding: 0, width: 'fit-content' }}
+            >
+              Configure a provider to get started
+            </Button>
+          )}
+        </Field>
 
-      <div style={{ display: 'grid', gap: 8 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, color: '#1f2a2a' }}>
-          Provider
-        </label>
-        <select
-          value={selectedProvider ?? ''}
-          onChange={(e) =>
-            setSelectedProvider(e.target.value as typeof selectedProvider)
-          }
-          style={selectStyle}
-        >
-          <option value='' disabled>
-            {isReady ? 'Select provider' : 'No providers configured'}
-          </option>
-          {availableProviders.map((cfg) => (
-            <option key={cfg.provider} value={cfg.provider}>
-              {cfg.provider}
-            </option>
-          ))}
-        </select>
-        {!isReady && (
-          <button style={linkButtonStyle} onClick={handleOpenSettings}>
-            Configure a provider to get started
-          </button>
-        )}
-      </div>
+        <Field>
+          <Label>Prompt</Label>
+          <Select
+            value={selectedPrompt ?? 'default'}
+            onValueChange={(val) =>
+              setSelectedPrompt(val === 'default' ? null : val)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder='Default prompt' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectViewport>
+                <SelectItem value='default'>Default prompt</SelectItem>
+                {promptTemplates.templates.map((tpl) => (
+                  <SelectItem key={tpl.id} value={tpl.id}>
+                    {tpl.name}
+                  </SelectItem>
+                ))}
+              </SelectViewport>
+            </SelectContent>
+          </Select>
+          <TextArea
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            placeholder='Edit the prompt for this session...'
+          />
+          <CharHint>{promptText.length} chars</CharHint>
+        </Field>
 
-      <div style={{ display: 'grid', gap: 8 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, color: '#1f2a2a' }}>
-          Prompt
-        </label>
-        <select
-          value={selectedPrompt ?? ''}
-          onChange={(e) => setSelectedPrompt(e.target.value || null)}
-          style={selectStyle}
-        >
-          <option value=''>Default prompt</option>
-          {promptTemplates.templates.map((tpl) => (
-            <option key={tpl.id} value={tpl.id}>
-              {tpl.name}
-            </option>
-          ))}
-        </select>
-        <textarea
-          value={promptText}
-          onChange={(e) => setPromptText(e.target.value)}
-          rows={20}
-          style={textAreaStyle}
-        />
-        <div style={{ fontSize: 12, color: '#5d6b68', textAlign: 'right' }}>
-          {promptText.length} chars
-        </div>
-      </div>
-
-      <button
-        style={primaryButtonStyle(
-          isReady && !!selectedProvider && !uiState.isLoading
-        )}
-        disabled={!isReady || !selectedProvider || uiState.isLoading}
-        onClick={handleStart}
-      >
-        {uiState.isLoading ? 'Starting...' : 'Start summary'}
-      </button>
-    </div>
+        <Button variant='default' size='lg' disabled={!canStart} onClick={handleStart}>
+          {uiState.isLoading ? 'Starting...' : 'Start summary'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
-const selectStyle: React.CSSProperties = {
-  height: 40,
-  borderRadius: 10,
-  border: '1px solid #d7e1dd',
-  padding: '0 12px',
-  fontSize: 14,
-  fontFamily: '"Space Grotesk", "Trebuchet MS", sans-serif',
-  color: '#1f2a2a',
-};
+const Field = styled.div`
+  display: grid;
+  gap: 8px;
+`;
 
-const primaryButtonStyle = (enabled: boolean): React.CSSProperties => ({
-  height: 44,
-  borderRadius: 10,
-  border: 'none',
-  background: enabled ? '#2f6f6a' : '#b7c7c2',
-  color: '#f9fbfa',
-  fontSize: 15,
-  fontWeight: 600,
-  cursor: enabled ? 'pointer' : 'not-allowed',
-  transition: 'background 0.2s ease',
-});
+const HelperText = styled.p`
+  margin: 0;
+  color: #5d6b68;
+  font-size: 13px;
+`;
 
-const linkButtonStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#2f6f6a',
-  fontSize: 13,
-  textAlign: 'left',
-  padding: 0,
-  cursor: 'pointer',
-};
+const TextArea = styled.textarea`
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d7e1dd;
+  padding: 10px 12px;
+  font-size: 13px;
+  min-height: 120px;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  color: #1f2a2a;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
 
-const textAreaStyle: React.CSSProperties = {
-  width: '100%',
-  borderRadius: 10,
-  border: '1px solid #d7e1dd',
-  padding: '10px 12px',
-  fontSize: 13,
-  minHeight: 120,
-  fontFamily: '"Space Grotesk", "Trebuchet MS", sans-serif',
-  color: '#1f2a2a',
-  resize: 'vertical',
-};
+  &:focus {
+    border-color: #2f6f6a;
+    box-shadow: 0 0 0 3px #e3f0ee;
+  }
+`;
+
+const CharHint = styled.div`
+  font-size: 12px;
+  color: #5d6b68;
+  text-align: right;
+`;
