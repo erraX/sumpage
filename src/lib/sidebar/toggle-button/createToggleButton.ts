@@ -72,20 +72,38 @@ export function createToggleButton(
     }
   });
 
+  // Track drag state to suppress click triggered after dragging
+  let ignoreNextClick = false;
+  let hasDragged = false;
+
   // Click handler
   const handleClick = () => {
+    if (ignoreNextClick) return;
     handlers.onClick();
   };
   button.addEventListener('click', handleClick);
 
   // Drag handlers
   const dragHandlers = {
-    onDragStart: () => {},
+    onDragStart: () => {
+      hasDragged = false;
+    },
     onDrag: (deltaX: number, deltaY: number) => {
+      // Mark as dragged as soon as we move even slightly
+      if (deltaX !== 0 || deltaY !== 0) {
+        hasDragged = true;
+      }
       applyPosition(position.right - deltaX, position.bottom - deltaY);
     },
     onDragEnd: () => {
       savePosition(position);
+      if (hasDragged) {
+        ignoreNextClick = true;
+        // Allow the inevitable click event after drag to be skipped once
+        setTimeout(() => {
+          ignoreNextClick = false;
+        }, 0);
+      }
     },
   };
 
