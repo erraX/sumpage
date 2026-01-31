@@ -35,6 +35,7 @@ export const useGlobalSettings = create<State & Actions>((set, get) => ({
       const settings = await storage.getSettings();
       set({ settings, isLoading: false });
     } catch (error) {
+      console.error('[GlobalSettings] Failed to load settings', error);
       set({ error: 'Failed to load settings', isLoading: false });
     }
   },
@@ -75,6 +76,7 @@ export const useGlobalSettings = create<State & Actions>((set, get) => ({
       await storage.initialize();
       await get().load();
     } catch (error) {
+      console.error('[GlobalSettings] Failed to initialize', error);
       set({ error: 'Failed to initialize', isLoading: false });
     }
   },

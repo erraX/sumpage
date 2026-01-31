@@ -12,7 +12,7 @@ import {
   CardContent,
   Alert,
   AlertDescription,
-} from '../../../lib/components/ui';
+} from '../ui';
 import * as S from './styles';
 
 const PROVIDERS: { type: ProviderType; label: string }[] = [

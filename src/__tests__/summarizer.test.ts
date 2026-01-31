@@ -20,7 +20,7 @@ vi.stubGlobal("chrome", mockChrome);
 
 describe("Sidebar injection", () => {
   it("should be importable", async () => {
-    const { injectSidebar } = await import("../content/sidebar-inject");
+    const { injectSidebar } = await import("../sidebar/inject");
     expect(injectSidebar).toBeDefined();
   });
 });

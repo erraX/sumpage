@@ -126,7 +126,7 @@ export async function isAnyConfigured(): Promise<boolean> {
 export async function getConfiguredProviders(): Promise<ProviderType[]> {
   const configs = await getConfigs();
   return Object.entries(configs)
-    .filter(([_, config]) => config?.apiKey && config?.baseUrl)
+    .filter(([, config]) => config?.apiKey && config?.baseUrl)
     .map(([provider]) => provider as ProviderType);
 }
 

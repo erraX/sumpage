@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
+import styled from "@emotion/styled";
 
-export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
+export type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;
 
 const Label = styled.label`
   display: block;

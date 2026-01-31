@@ -8,7 +8,7 @@ interface UseSummarizerReturn {
   summarize: (promptId?: string, templateOverride?: string) => Promise<void>;
   summarizeWithTemplate: (template: string) => Promise<void>;
   extractPageContent: () => Promise<{ title: string; url: string; textContent: string } | null>;
-  checkConfiguration: (options?: { closeIfConfigured?: boolean }) => Promise<boolean>;
+  checkConfiguration: () => Promise<boolean>;
 }
 
 export function useSummarizer(): UseSummarizerReturn {
@@ -52,21 +52,18 @@ export function useSummarizer(): UseSummarizerReturn {
     []
   );
 
-  const checkConfiguration = useCallback(
-    async (_options?: { closeIfConfigured?: boolean }): Promise<boolean> => {
-      if (typeof chrome === "undefined" || !chrome.storage) {
-        return false;
-      }
+  const checkConfiguration = useCallback(async (): Promise<boolean> => {
+    if (typeof chrome === "undefined" || !chrome.storage) {
+      return false;
+    }
 
-      return new Promise((resolve) => {
-        chrome.storage.local.get("deepseekConfig", (result) => {
-          const config = result.deepseekConfig;
-          resolve(!!config);
-        });
+    return new Promise((resolve) => {
+      chrome.storage.local.get("deepseekConfig", (result) => {
+        const config = result.deepseekConfig;
+        resolve(!!config);
       });
-    },
-    []
-  );
+    });
+  }, []);
 
   const summarize = useCallback(
     async (promptId?: string, templateOverride?: string) => {

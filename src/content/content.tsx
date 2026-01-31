@@ -1,5 +1,5 @@
 // Import sidebar injection
-import { injectSidebar } from "./sidebar-inject";
+import { injectSidebar } from "../sidebar/inject";
 
 // Inject sidebar when content script loads
 if (typeof window !== "undefined" && !window.sumpageInjected) {

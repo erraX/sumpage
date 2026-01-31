@@ -5,7 +5,7 @@ import type {
   PromptTemplate,
   BackgroundMessage,
   ProviderConfig,
-} from "../content/models";
+} from "../sidebar/ui/models";
 
 const MAX_CONTENT_LENGTH = 12000;
 
@@ -217,8 +217,14 @@ async function handleChatWithAI(
       let errorMessage = `API error: ${response.status}`;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error?.message || errorMessage;
-      } catch {}
+        errorMessage =
+          errorData.message || errorData.error?.message || errorMessage;
+      } catch (parseError) {
+        console.warn(
+          "[Background] Failed to parse error response",
+          parseError
+        );
+      }
       sendResponse({ success: false, error: errorMessage });
       return;
     }
@@ -239,17 +245,27 @@ async function handleChatWithAI(
 }
 
 // Set up message listener
-chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
-  console.log("[Background] Message received:", message.type);
-  if (message.type === "SUMMARIZE_WITH_DEEPSEEK") {
-    handleDeepSeekSummarize(message.payload, sendResponse);
-    return true; // Keep channel open for async response
+chrome.runtime.onMessage.addListener(
+  (message: BackgroundMessage, _sender, sendResponse) => {
+    console.log("[Background] Message received:", message.type);
+    if (message.type === "SUMMARIZE_WITH_DEEPSEEK") {
+      handleDeepSeekSummarize(message.payload, sendResponse);
+      return true; // Keep channel open for async response
+    }
+    if (message.type === "CHAT_WITH_AI") {
+      const chatPayload: Parameters<typeof handleChatWithAI>[0] = {
+        title: message.payload.title,
+        textContent: message.payload.textContent,
+        message: message.payload.message ?? "",
+        history: message.payload.history ?? [],
+        promptId: message.payload.promptId,
+        promptTemplate: message.payload.promptTemplate,
+      };
+      handleChatWithAI(chatPayload, sendResponse);
+      return true; // Keep channel open for async response
+    }
+    return false;
   }
-  if (message.type === "CHAT_WITH_AI") {
-    handleChatWithAI(message.payload as any, sendResponse);
-    return true; // Keep channel open for async response
-  }
-  return false;
-});
+);
 
 console.log("[Background] Service worker ready");

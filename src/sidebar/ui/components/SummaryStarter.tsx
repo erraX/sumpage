@@ -14,9 +14,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../lib/components/ui/card';
-import { Button } from '../../lib/components/ui/button';
-import { Label } from '../../lib/components/ui/label';
+} from './ui/card';
+import { Button } from './ui/button';
+import { Label } from './ui/label';
 import {
   Select,
   SelectContent,
@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectViewport,
-} from '../../lib/components/ui/select';
+} from './ui/select';
 
 interface SummaryStarterProps {
   onOpenSettings?: () => void;

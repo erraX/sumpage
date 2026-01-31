@@ -36,6 +36,7 @@ export const usePromptTemplates = create<State & Actions>((set, get) => ({
       const selectedId = await getSelectedPromptId();
       set({ templates, selectedPromptId: selectedId, isLoading: false });
     } catch (error) {
+      console.error('[PromptTemplates] Failed to load templates', error);
       set({ error: 'Failed to load templates', isLoading: false });
     }
   },

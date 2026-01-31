@@ -2,10 +2,10 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import type { PanelOptions, PanelResult } from '../types';
-import { SidebarApp } from '../../../content/SidebarApp';
-import { PANEL_STYLES, COMPONENT_STYLES } from './panelStyles';
-import { setupOutsideClick } from '../outsideClick';
+import type { PanelOptions, PanelResult } from "../types";
+import { SidebarApp } from "../../ui/SidebarApp";
+import { PANEL_STYLES, COMPONENT_STYLES } from "./panelStyles";
+import { setupOutsideClick } from "../outsideClick";
 
 export function createPanel(options: PanelOptions = {}): PanelResult {
   // Create panel host with its own shadow root

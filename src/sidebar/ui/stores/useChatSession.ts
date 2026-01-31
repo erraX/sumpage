@@ -32,6 +32,7 @@ export const useChatSession = create<State & Actions>((set, get) => ({
       const history = await storage.getChatHistory(url);
       set({ messages: history || [], isLoading: false });
     } catch (error) {
+      console.error('[ChatSession] Failed to load chat history', error);
       set({ error: 'Failed to load chat history', isLoading: false });
     }
   },
