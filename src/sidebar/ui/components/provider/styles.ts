@@ -18,41 +18,9 @@ const theme = {
   white: '#f9fbfa',
 };
 
-// Provider Tabs
 export const ProviderTabsContainer = styled.div`
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  align-items: center;
-`;
-
-export const ProviderTabButton = styled.button<{ $active?: boolean }>`
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid ${theme.border};
-  background: ${props => props.$active ? theme.accent : theme.white};
-  color: ${props => props.$active ? theme.white : theme.ink};
-  font-family: ${theme.font};
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: ${props => props.$active ? theme.accentStrong : theme.accentSoft};
-    border-color: ${theme.accent};
-  }
-
-  &:focus-visible {
-    outline: 2px solid ${theme.accent};
-    outline-offset: 2px;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  margin-bottom: 16px;
 `;
 
 // Form

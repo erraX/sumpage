@@ -14,6 +14,7 @@ import {
   AlertDescription,
 } from '../ui';
 import * as S from './styles';
+import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 
 const PROVIDERS: { type: ProviderType; label: string }[] = [
   { type: 'deepseek', label: 'DeepSeek' },
@@ -116,7 +117,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     loadConfig();
   }, [selectedProvider]);
 
-  const handleProviderSelect = (provider: ProviderType) => {
+  const handleProviderSelect = (event: SelectChangeEvent<string>) => {
+    const provider = event.target.value as ProviderType;
     setSelectedProvider(provider);
     setError(null);
     setSuccess(false);
@@ -221,17 +223,23 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
           <CardTitle>Provider Configuration</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Provider Tabs */}
+          {/* Provider Selector */}
           <S.ProviderTabsContainer>
-            {PROVIDERS.map(({ type, label }) => (
-              <S.ProviderTabButton
-                key={type}
-                $active={selectedProvider === type}
-                onClick={() => handleProviderSelect(type)}
+            <FormControl fullWidth size="small">
+              <InputLabel id="provider-select">Choose provider</InputLabel>
+              <Select
+                labelId="provider-select"
+                label="Choose provider"
+                value={selectedProvider ?? ''}
+                onChange={handleProviderSelect}
               >
-                {label}
-              </S.ProviderTabButton>
-            ))}
+                {PROVIDERS.map(({ type, label }) => (
+                  <MenuItem key={type} value={type}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </S.ProviderTabsContainer>
 
           {selectedProvider ? (

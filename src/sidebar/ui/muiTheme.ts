@@ -80,6 +80,7 @@ export const muiTheme = createTheme({
         root: {
           boxShadow: 'none',
           border: `1px solid ${appTheme.border}`,
+          overflow: 'visible', // allow Select/menus inside cards to show outside bounds
         },
       },
     },
