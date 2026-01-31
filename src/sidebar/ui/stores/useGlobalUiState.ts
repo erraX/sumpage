@@ -7,10 +7,12 @@ interface State {
 interface Actions {
   showSettingPage: () => void;
   hideSettingPage: () => void;
+  toggleSettingPage: () => void;
 }
 
-export const useGlobalUiState = create<State & Actions>((set) => ({
+export const useGlobalUiState = create<State & Actions>((set, get) => ({
   settingPageVisible: false,
   showSettingPage: () => set({ settingPageVisible: true }),
   hideSettingPage: () => set({ settingPageVisible: false }),
+  toggleSettingPage: () => set({ settingPageVisible: !get().settingPageVisible }),
 }));

@@ -16,6 +16,24 @@ export const Panel = styled.div`
   background: transparent;
 `;
 
+export const PanelContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #f9fbfa 0%, #f1f5f3 100%);
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #efe9e1;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #c6d5d0;
+    border-radius: 999px;
+    border: 2px solid #efe9e1;
+  }
+`;
+
 export const Container = styled.div`
   max-width: 360px;
   margin: 0 auto;

@@ -9,12 +9,7 @@ import {
   useUIStore,
   useGlobalUiState,
 } from '../stores';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import {
@@ -88,7 +83,10 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
 
   const isReady = availableProviders.length > 0;
   const canStart =
-    isReady && !!selectedProvider && promptText.trim().length > 0 && !uiState.isLoading;
+    isReady &&
+    !!selectedProvider &&
+    promptText.trim().length > 0 &&
+    !uiState.isLoading;
 
   const handleStart = async () => {
     if (!selectedProvider) return;
@@ -194,7 +192,12 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
           <CharHint>{promptText.length} chars</CharHint>
         </Field>
 
-        <Button variant='default' size='lg' disabled={!canStart} onClick={handleStart}>
+        <Button
+          variant='default'
+          size='lg'
+          disabled={!canStart}
+          onClick={handleStart}
+        >
           {uiState.isLoading ? 'Starting...' : 'Start summary'}
         </Button>
       </CardContent>
@@ -223,7 +226,9 @@ const TextArea = styled.textarea`
   font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
   color: #1f2a2a;
   resize: vertical;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
   outline: none;
 
   &:focus {

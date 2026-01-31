@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Host } from './components/styles';
+import { useEffect, useState } from 'react';
+import { Host, PanelContent } from './components/styles';
 import { DEFAULT_PROMPT_TEMPLATE } from './constants';
 import {
   usePromptTemplates,
@@ -9,6 +9,7 @@ import {
 } from './stores';
 import { ProviderConfig } from './components/provider/ProviderConfig';
 import { SummaryStarter } from './components/SummaryStarter';
+import { PanelHeader } from './components/PanelHeader';
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -16,19 +17,19 @@ interface SidebarAppProps {
 
 export function SidebarApp({ onClose }: SidebarAppProps) {
   const [isInitingApp, setIsInitingApp] = useState(true);
-  const hasInitialized = useRef(false);
 
   const promptTemplates = usePromptTemplates();
   const providerConfigs = useProviderConfigs();
   const globalSettings = useGlobalSettings();
-  const { settingPageVisible, showSettingPage, hideSettingPage } =
-    useGlobalUiState();
+  const {
+    settingPageVisible,
+    showSettingPage,
+    hideSettingPage,
+    toggleSettingPage,
+  } = useGlobalUiState();
 
   // Initialize on mount (guarded so it only runs once even if dependencies change)
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
     const init = async () => {
       await globalSettings.initialize();
       await promptTemplates.initialize(DEFAULT_PROMPT_TEMPLATE);
@@ -53,47 +54,16 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
       setIsInitingApp(false);
     };
     void init();
-  }, [globalSettings, promptTemplates, providerConfigs, showSettingPage]);
-
-  // Main content view
-  const handleToggleSettings = () => {
-    if (settingPageVisible) {
-      hideSettingPage();
-    } else {
-      showSettingPage();
-    }
-  };
+  }, []);
 
   return (
     <>
-      <div className='sumpage-panel-header'>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <h2 style={{ margin: 0 }}>Sumpage</h2>
-          <button
-            className='sumpage-panel-btn'
-            title='Settings'
-            onClick={handleToggleSettings}
-            aria-pressed={settingPageVisible}
-          >
-            ⚙
-          </button>
-        </div>
-        <button
-          className='sumpage-panel-btn sumpage-panel-btn-close'
-          onClick={onClose}
-          aria-label='Close sidebar'
-        >
-          ×
-        </button>
-      </div>
-
-      <div className='sumpage-panel-content'>
+      <PanelHeader
+        onToggleSettings={toggleSettingPage}
+        onClose={onClose}
+        settingPageVisible={settingPageVisible}
+      />
+      <PanelContent>
         <Host>
           {isInitingApp && <div>loading...</div>}
           {settingPageVisible && (
@@ -103,7 +73,7 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
             <SummaryStarter onOpenSettings={showSettingPage} />
           )}
         </Host>
-      </div>
+      </PanelContent>
     </>
   );
 }

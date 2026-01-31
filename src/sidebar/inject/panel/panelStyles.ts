@@ -20,53 +20,6 @@ export const PANEL_STYLES = `
   font-family: 'Space Grotesk', sans-serif;
 }
 .sumpage-panel-open { transform: translateX(0); }
-
-/* Header */
-.sumpage-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(160deg, #2f6f6a 0%, #3b837f 100%);
-}
-.sumpage-panel-header h2 {
-  font-size: 17px;
-  font-weight: 600;
-  color: #f9fbfa;
-  margin: 0;
-}
-.sumpage-panel-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
-  font-size: 14px;
-  color: #f9fbfa;
-}
-.sumpage-panel-btn:hover { background: rgba(255, 255, 255, 0.28); }
-.sumpage-panel-btn-close {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  font-size: 16px;
-}
-
-/* Content */
-.sumpage-panel-content {
-  flex: 1;
-  overflow-y: auto;
-  background: linear-gradient(180deg, #f9fbfa 0%, #f1f5f3 100%);
-}
-.sumpage-panel-content::-webkit-scrollbar { width: 10px; }
-.sumpage-panel-content::-webkit-scrollbar-track { background: #efe9e1; }
-.sumpage-panel-content::-webkit-scrollbar-thumb { background: #c6d5d0; border-radius: 999px; border: 2px solid #efe9e1; }
 `;
 
 export const COMPONENT_STYLES = `

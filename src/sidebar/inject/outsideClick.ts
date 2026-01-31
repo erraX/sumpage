@@ -11,6 +11,12 @@ export function setupOutsideClick(
   const handler = (e: MouseEvent) => {
     if (ignoreNextClick) return;
 
+    // If a Radix Select (or similar) portal is currently open, skip closing
+    const openRadixSelect = document.querySelector(
+      '[data-radix-select-content][data-state="open"]'
+    );
+    if (openRadixSelect) return;
+
     const target = e.target as Node;
     if (!target) return;
 
