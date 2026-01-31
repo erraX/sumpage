@@ -1,7 +1,7 @@
-import { createToggleButton } from "./toggle-button";
-import { createPanel } from "./panel";
-import type { PanelResult } from "./types";
-import { ShadowDom } from "./ShadowDom";
+import { createToggleButton } from './toggle-button';
+import { createPanel } from './panel';
+import { ShadowDom } from './ShadowDom';
+import { singleton } from '../../utils/singleton';
 
 // Prevent multiple injections
 let injected = false;
@@ -10,25 +10,15 @@ export function injectSidebar() {
   if (injected) return;
   injected = true;
 
-  const buttonHost = new ShadowDom("sumpage-sidebar-button-host");
-  buttonHost.mount();
+  const button = new ShadowDom('sumpage-sidebar-button-host').mount();
 
-  let panel: PanelResult | null = null;
-  function openPanel() {
-    if (!panel) {
-      panel = createPanel();
-    }
-    panel.open();
-  }
+  const panel = singleton(createPanel);
 
-  createToggleButton(buttonHost.getShadow()!, {
+  createToggleButton(button.getShadow()!, {
     onPositionChange: () => {},
-    onClick: openPanel,
+    onClick: panel.get().open,
   });
 
   // Auto-open panel on load if no provider configured
-  setTimeout(openPanel, 0);
+  setTimeout(panel.get().open, 0);
 }
-
-// Auto-inject when script loads
-injectSidebar();

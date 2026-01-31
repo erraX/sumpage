@@ -20,11 +20,13 @@ export class ShadowDom {
   mount() {
     document.body.appendChild(this.host);
     this.shadow = this.host.attachShadow({ mode: 'open' });
+    return this;
   }
 
   unmount() {
     if (this.host.parentNode) {
       this.host.parentNode.removeChild(this.host);
     }
+    return this;
   }
 }
