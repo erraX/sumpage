@@ -1,62 +1,45 @@
-/** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
+import React from 'react';
+import { Alert as MuiAlert, type AlertProps as MuiAlertProps, Typography } from '@mui/material';
 
-interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AlertProps extends Omit<MuiAlertProps, 'severity' | 'variant'> {
   variant?: 'default' | 'destructive' | 'success';
 }
 
-const AlertDiv = styled.div<AlertProps>`
-  position: relative;
-  width: 100%;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+function Alert({ variant = 'default', children, ...rest }: AlertProps) {
+  const severity =
+    variant === 'destructive' ? 'error' : variant === 'success' ? 'success' : 'info';
 
-  ${props => {
-    switch (props.variant) {
-      case 'destructive':
-        return `
-          background: #fff0ec;
-          border: 1px solid #f2b8a8;
-          color: #b44635;
-        `;
-      case 'success':
-        return `
-          background: #e6f4ec;
-          border: 1px solid #2f7a4f;
-          color: #2f7a4f;
-        `;
-      default:
-        return `
-          background: #ffffff;
-          border: 1px solid #d7e1dd;
-          color: #1f2a2a;
-        `;
-    }
-  }}
-`;
+  const mergedSx = Array.isArray(rest.sx)
+    ? [{ alignItems: 'flex-start' }, ...rest.sx]
+    : [{ alignItems: 'flex-start' }, rest.sx].filter(Boolean);
 
-const AlertTitle = styled.h4`
-  margin: 0 0 4px 0;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
-`;
+  return (
+    <MuiAlert
+      severity={severity}
+      variant="outlined"
+      icon={false}
+      {...rest}
+      sx={mergedSx}
+    >
+      {children}
+    </MuiAlert>
+  );
+}
 
-const AlertDescription = styled.div`
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+function AlertTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography component="h4" variant="subtitle2" fontWeight={600} mb={0.5}>
+      {children}
+    </Typography>
+  );
+}
 
-  p {
-    margin: 0;
-  }
-`;
+function AlertDescription({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography variant="body2" lineHeight={1.5}>
+      {children}
+    </Typography>
+  );
+}
 
-AlertDiv.displayName = 'Alert';
-
-export { AlertDiv as Alert, AlertTitle, AlertDescription };
+export { Alert, AlertTitle, AlertDescription };

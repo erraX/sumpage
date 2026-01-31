@@ -11,30 +11,27 @@ export function setupOutsideClick(
   const handler = (e: MouseEvent) => {
     if (ignoreNextClick) return;
 
-    // If a Radix Select (or similar) portal is currently open, skip closing
-    const openRadixSelect = document.querySelector(
-      '[data-radix-select-content][data-state="open"]'
-    );
-    if (openRadixSelect) return;
-
     const target = e.target as Node;
     if (!target) return;
 
     // Use composedPath to properly traverse shadow DOM boundaries
     const path = e.composedPath();
 
-    // Ignore clicks inside Radix Select portals (to prevent closing panel when opening selects)
-    const pathIncludesRadixSelect = path.some((node) => {
-      if (!(node instanceof Element)) return false;
-      const attrNames = node.getAttributeNames();
-      if (attrNames.some((name) => name.startsWith('data-radix'))) {
-        return true;
+    // Ignore clicks inside MUI popovers/menus (Select, Autocomplete, etc.)
+    const muiOverlay = document.querySelector('.MuiPopover-root, .MuiModal-root');
+    if (muiOverlay) {
+      if (muiOverlay.contains(target) || path.includes(muiOverlay)) {
+        return;
       }
-      // Also guard on common roles Radix applies to content/viewport/items
+    }
+
+    // Also guard on generic listbox/option roles to avoid closing while interacting with dropdowns
+    const pathIncludesListbox = path.some((node) => {
+      if (!(node instanceof Element)) return false;
       const role = node.getAttribute('role');
       return role === 'listbox' || role === 'option' || role === 'combobox';
     });
-    if (pathIncludesRadixSelect) return;
+    if (pathIncludesListbox) return;
 
     // Check if click is inside any of our tracked elements (handles shadow DOM via contains)
     for (const element of elements) {

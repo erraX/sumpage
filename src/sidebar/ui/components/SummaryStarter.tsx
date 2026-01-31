@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import styled from '@emotion/styled';
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  type SelectChangeEvent,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useSummarizer } from '../hooks/useSummarizer';
 import { DEFAULT_PROMPT_TEMPLATE } from '../constants';
 import {
@@ -9,23 +19,16 @@ import {
   useUIStore,
   useGlobalUiState,
 } from '../stores';
+import type { ProviderType } from '../models';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectViewport,
-} from './ui/select';
 
 interface SummaryStarterProps {
   onOpenSettings?: () => void;
 }
 
-// SummaryStarter built with shadcn-style primitives for consistency/testability
+// SummaryStarter now uses Material UI primitives for consistent styling inside the sidebar
 export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   const { summarize } = useSummarizer();
 
@@ -117,128 +120,101 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
     showSettingPage();
   };
 
+  const handleProviderChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value as ProviderType | '';
+    setSelectedProvider(value || null);
+  };
+
+  const handlePromptChange = (event: SelectChangeEvent<string>) => {
+    const value = event.target.value;
+    setSelectedPrompt(value === 'default' ? null : value);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Start a summary</CardTitle>
-        <HelperText>
+        <Typography variant="body2" color="text.secondary" margin={0}>
           Choose provider and prompt, tweak the text for this session, then go.
-        </HelperText>
+        </Typography>
       </CardHeader>
-      <CardContent css={{ display: 'grid', gap: 16 }}>
-        <Field>
-          <Label>Provider</Label>
-          <Select
-            value={selectedProvider ?? ''}
-            onValueChange={(val) =>
-              setSelectedProvider(val as typeof selectedProvider)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue
-                placeholder={
-                  isReady ? 'Select provider' : 'No providers configured'
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectViewport>
+      <CardContent>
+        <Stack spacing={2}>
+          <Stack spacing={1}>
+            <Label>Provider</Label>
+            <FormControl fullWidth size="small">
+              <InputLabel id="provider-select-label">
+                {isReady ? 'Select provider' : 'No providers configured'}
+              </InputLabel>
+              <Select
+                labelId="provider-select-label"
+                value={selectedProvider ?? ''}
+                label={isReady ? 'Select provider' : 'No providers configured'}
+                onChange={handleProviderChange}
+                displayEmpty
+              >
+                {!isReady && (
+                  <MenuItem value="" disabled>
+                    No providers configured
+                  </MenuItem>
+                )}
                 {availableProviders.map((cfg) => (
-                  <SelectItem key={cfg.provider} value={cfg.provider}>
+                  <MenuItem key={cfg.provider} value={cfg.provider}>
                     {cfg.provider}
-                  </SelectItem>
+                  </MenuItem>
                 ))}
-              </SelectViewport>
-            </SelectContent>
-          </Select>
-          {!isReady && (
-            <Button
-              variant='link'
-              onClick={handleOpenSettings}
-              css={{ padding: 0, width: 'fit-content' }}
-            >
-              Configure a provider to get started
-            </Button>
-          )}
-        </Field>
+              </Select>
+            </FormControl>
+            {!isReady && (
+              <Button variant='link' onClick={handleOpenSettings}>
+                Configure a provider to get started
+              </Button>
+            )}
+          </Stack>
 
-        <Field>
-          <Label>Prompt</Label>
-          <Select
-            value={selectedPrompt ?? 'default'}
-            onValueChange={(val) =>
-              setSelectedPrompt(val === 'default' ? null : val)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder='Default prompt' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectViewport>
-                <SelectItem value='default'>Default prompt</SelectItem>
+          <Stack spacing={1}>
+            <Label>Prompt</Label>
+            <FormControl fullWidth size="small">
+              <InputLabel id="prompt-select-label">Prompt</InputLabel>
+              <Select
+                labelId="prompt-select-label"
+                value={selectedPrompt ?? 'default'}
+                label="Prompt"
+                onChange={handlePromptChange}
+              >
+                <MenuItem value='default'>Default prompt</MenuItem>
                 {promptTemplates.templates.map((tpl) => (
-                  <SelectItem key={tpl.id} value={tpl.id}>
+                  <MenuItem key={tpl.id} value={tpl.id}>
                     {tpl.name}
-                  </SelectItem>
+                  </MenuItem>
                 ))}
-              </SelectViewport>
-            </SelectContent>
-          </Select>
-          <TextArea
-            value={promptText}
-            onChange={(e) => setPromptText(e.target.value)}
-            placeholder='Edit the prompt for this session...'
-          />
-          <CharHint>{promptText.length} chars</CharHint>
-        </Field>
+              </Select>
+            </FormControl>
+            <TextField
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder='Edit the prompt for this session...'
+              multiline
+              minRows={5}
+              size="small"
+            />
+            <Box display="flex" justifyContent="flex-end">
+              <Typography variant="caption" color="text.secondary">
+                {promptText.length} chars
+              </Typography>
+            </Box>
+          </Stack>
 
-        <Button
-          variant='default'
-          size='lg'
-          disabled={!canStart}
-          onClick={handleStart}
-        >
-          {uiState.isLoading ? 'Starting...' : 'Start summary'}
-        </Button>
+          <Button
+            variant='default'
+            size='lg'
+            disabled={!canStart}
+            onClick={handleStart}
+          >
+            {uiState.isLoading ? 'Starting...' : 'Start summary'}
+          </Button>
+        </Stack>
       </CardContent>
     </Card>
   );
 }
-
-const Field = styled.div`
-  display: grid;
-  gap: 8px;
-`;
-
-const HelperText = styled.p`
-  margin: 0;
-  color: #5d6b68;
-  font-size: 13px;
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid #d7e1dd;
-  padding: 10px 12px;
-  font-size: 13px;
-  min-height: 120px;
-  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
-  color: #1f2a2a;
-  resize: vertical;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-  outline: none;
-
-  &:focus {
-    border-color: #2f6f6a;
-    box-shadow: 0 0 0 3px #e3f0ee;
-  }
-`;
-
-const CharHint = styled.div`
-  font-size: 12px;
-  color: #5d6b68;
-  text-align: right;
-`;

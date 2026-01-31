@@ -1,13 +1,8 @@
-/** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
+import { Divider, type DividerProps } from '@mui/material';
 
-const Separator = styled.hr`
-  flex-shrink: 0;
-  background: #d7e1dd;
-  width: 100%;
-  height: 1px;
-  margin: 16px 0;
-`;
+function Separator(props: DividerProps) {
+  return <Divider {...props} sx={{ my: 2, ...props.sx }} />;
+}
 
 Separator.displayName = 'Separator';
 

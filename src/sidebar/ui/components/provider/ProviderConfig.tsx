@@ -328,8 +328,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                 <Button
                   onClick={handleSave}
                   disabled={isLoading}
-                  data-variant='default'
-                  data-size='default'
+                  variant='default'
+                  size='default'
                 >
                   {isLoading ? 'Saving...' : existingConfig ? 'Update' : 'Save'}
                 </Button>
@@ -337,8 +337,8 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                   <Button
                     onClick={handleDelete}
                     disabled={isLoading}
-                    data-variant='destructive'
-                    data-size='default'
+                    variant='destructive'
+                    size='default'
                   >
                     Delete
                   </Button>

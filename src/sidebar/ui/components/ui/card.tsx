@@ -1,30 +1,43 @@
-/** @jsxImportSource @emotion/react */
-import styled from '@emotion/styled';
+import React from 'react';
+import {
+  Card as MuiCard,
+  CardContent as MuiCardContent,
+  type CardProps as MuiCardProps,
+  type CardContentProps as MuiCardContentProps,
+  Box,
+  Typography,
+  type TypographyProps,
+} from '@mui/material';
 
-const Card = styled.div`
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #d7e1dd;
-  overflow: hidden;
-  box-shadow: 0;
-`;
+type CardProps = MuiCardProps;
+type CardHeaderProps = React.ComponentProps<typeof Box>;
+type CardTitleProps = TypographyProps;
+type CardContentProps = MuiCardContentProps;
 
-const CardHeader = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-`;
+function Card(props: CardProps) {
+  return <MuiCard variant="outlined" {...props} />;
+}
 
-const CardTitle = styled.h3`
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2a2a;
-  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
-`;
+function CardHeader(props: CardHeaderProps) {
+  return <Box display="flex" flexDirection="column" gap={1} padding={2.5} {...props} />;
+}
 
-const CardContent = styled.div`
-  padding: 0 20px 20px;
-`;
+function CardTitle({ children, component = 'h3', sx, ...rest }: CardTitleProps) {
+  return (
+    <Typography
+      variant="h6"
+      component={component}
+      fontWeight={600}
+      sx={{ margin: 0, ...sx }}
+      {...rest}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function CardContent(props: CardContentProps) {
+  return <MuiCardContent sx={{ pt: 0, px: 2.5, pb: 2.5 }} {...props} />;
+}
 
 export { Card, CardHeader, CardTitle, CardContent };

@@ -2,10 +2,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import type { PanelOptions, PanelResult } from '../types';
 import { SidebarApp } from '../../ui/SidebarApp';
 import { PANEL_STYLES, COMPONENT_STYLES } from './panelStyles';
 import { setupOutsideClick } from '../outsideClick';
+import { muiTheme } from '../../ui/muiTheme';
 
 export function createPanel(options: PanelOptions = {}): PanelResult {
   // Create panel host with its own shadow root
@@ -61,9 +63,18 @@ export function createPanel(options: PanelOptions = {}): PanelResult {
     React.createElement(
       CacheProvider,
       { value: cache },
-      React.createElement(SidebarApp, {
-        onClose: closePanel,
-      })
+      React.createElement(
+        ThemeProvider,
+        { theme: muiTheme },
+        React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(CssBaseline, null),
+          React.createElement(SidebarApp, {
+            onClose: closePanel,
+          })
+        )
+      )
     )
   );
 
