@@ -225,13 +225,14 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         <CardContent>
           {/* Provider Selector */}
           <S.ProviderTabsContainer>
-            <FormControl fullWidth size="small">
-              <InputLabel id="provider-select">Choose provider</InputLabel>
+            <FormControl fullWidth size='small'>
+              <InputLabel id='provider-select'>Choose provider</InputLabel>
               <Select
-                labelId="provider-select"
-                label="Choose provider"
+                labelId='provider-select'
+                label='Choose provider'
                 value={selectedProvider ?? ''}
                 onChange={handleProviderSelect}
+                MenuProps={{ disablePortal: true, disableScrollLock: true }}
               >
                 {PROVIDERS.map(({ type, label }) => (
                   <MenuItem key={type} value={type}>

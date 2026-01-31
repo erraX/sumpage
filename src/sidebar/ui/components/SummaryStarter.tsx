@@ -152,7 +152,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
                 label={isReady ? 'Select provider' : 'No providers configured'}
                 onChange={handleProviderChange}
                 displayEmpty
-                MenuProps={{ disablePortal: true }}
+                MenuProps={{ disablePortal: true, disableScrollLock: true }}
               >
                 {!isReady && (
                   <MenuItem value="" disabled>
@@ -182,7 +182,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
                 value={selectedPrompt ?? 'default'}
                 label="Prompt"
                 onChange={handlePromptChange}
-                MenuProps={{ disablePortal: true }}
+                MenuProps={{ disablePortal: true, disableScrollLock: true }}
               >
                 <MenuItem value='default'>Default prompt</MenuItem>
                 {promptTemplates.templates.map((tpl) => (
