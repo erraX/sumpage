@@ -45,8 +45,9 @@ describe('sidebar toggle button', () => {
 
     const closeBtn = panelShadow.querySelector(
       '.sumpage-panel-btn-close'
-    ) as HTMLButtonElement;
-    closeBtn.click();
+    ) as HTMLButtonElement | null;
+    expect(closeBtn).not.toBeNull();
+    closeBtn?.click();
 
     expect(panel.classList.contains('sumpage-panel-open')).toBe(false);
 
