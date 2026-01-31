@@ -1,12 +1,8 @@
-import type { Position, ToggleButtonHandlers } from "../types";
-import { BUTTON_STYLES } from "./buttonStyles";
-import { setupDragging } from "./dragLogic";
-import { loadPosition, savePosition } from "./positionStorage";
-import {
-  injectStyle,
-  createElement,
-  buildToggleButtonIcon,
-} from "../dom";
+import type { Position, ToggleButtonHandlers } from '../types';
+import { BUTTON_STYLES } from './buttonStyles';
+import { setupDragging } from './dragLogic';
+import { loadPosition, savePosition } from './positionStorage';
+import { createElement, buildToggleButtonIcon } from '../dom';
 
 const DEFAULT_POSITION: Position = { right: 24, bottom: 24 };
 const DRAG_CLICK_SLOP_PX = 5;
@@ -44,20 +40,15 @@ function createButtonPositionController(
 
   const applyPosition = (
     next: Position,
-    options: { persist?: boolean; notify?: boolean; forceNotify?: boolean } = {}
+    options: { persist?: boolean } = {}
   ): Position => {
-    const { persist = false, notify = true, forceNotify = false } = options;
+    const { persist = false } = options;
     const clamped = clampToViewport(next);
-    const changed =
-      clamped.right !== position.right || clamped.bottom !== position.bottom;
 
     position = clamped;
     button.style.right = clamped.right + 'px';
     button.style.bottom = clamped.bottom + 'px';
 
-    if (notify && (changed || forceNotify)) {
-      handlers.onPositionChange(clamped);
-    }
     if (persist) {
       savePosition(clamped);
     }
@@ -72,7 +63,7 @@ function createButtonPositionController(
 
   const init = () => {
     // Apply default position immediately so the button renders bottom-right.
-    applyPosition(position, { notify: false });
+    applyPosition(position);
 
     // Initialize position from storage.
     loadPosition().then((saved) => {
@@ -96,13 +87,10 @@ function createButtonPositionController(
         y: accumulatedDelta.y + deltaY,
       };
 
-      applyPosition(
-        {
-          right: position.right - deltaX,
-          bottom: position.bottom - deltaY,
-        },
-        { notify: false }
-      );
+      applyPosition({
+        right: position.right - deltaX,
+        bottom: position.bottom - deltaY,
+      });
 
       if (
         !suppressClick &&
@@ -123,8 +111,6 @@ function createButtonPositionController(
 
       applyPosition(finalPosition, {
         persist: movedEnough,
-        forceNotify: movedEnough,
-        notify: true,
       });
 
       if (movedEnough) {
@@ -153,34 +139,22 @@ function createButtonPositionController(
   };
 }
 
-export function createToggleButton(
-  container: ShadowRoot,
-  handlers: ToggleButtonHandlers
-): { element: HTMLButtonElement; position: Position } {
-  // toggle button styles
-  injectStyle(BUTTON_STYLES, container);
-
-  // toggle button
-  const button = createElement<HTMLButtonElement>(
-    'button',
-    {
-      id: 'sumpage-toggle-btn',
-      className: 'sumpage-toggle-btn',
-      title: 'Sumpage - Click to summarize this page',
-    },
-    container
-  );
-
+export function createToggleButton(handlers: ToggleButtonHandlers) {
+  const button = createElement<HTMLButtonElement>('button', {
+    id: 'sumpage-toggle-btn',
+    className: 'sumpage-toggle-btn',
+    title: 'Sumpage - Click to summarize this page',
+  });
   button.appendChild(buildToggleButtonIcon());
 
   const positionController = createButtonPositionController(button, handlers);
-
   button.addEventListener('click', positionController.handleClick);
   setupDragging(button, positionController.dragHandlers);
   positionController.init();
 
   return {
     element: button,
+    styles: BUTTON_STYLES,
     position: positionController.getPosition(),
   };
 }

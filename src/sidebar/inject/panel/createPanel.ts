@@ -2,10 +2,10 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import type { PanelOptions, PanelResult } from "../types";
-import { SidebarApp } from "../../ui/SidebarApp";
-import { PANEL_STYLES, COMPONENT_STYLES } from "./panelStyles";
-import { setupOutsideClick } from "../outsideClick";
+import type { PanelOptions, PanelResult } from '../types';
+import { SidebarApp } from '../../ui/SidebarApp';
+import { PANEL_STYLES, COMPONENT_STYLES } from './panelStyles';
+import { setupOutsideClick } from '../outsideClick';
 
 export function createPanel(options: PanelOptions = {}): PanelResult {
   // Create panel host with its own shadow root
@@ -35,18 +35,26 @@ export function createPanel(options: PanelOptions = {}): PanelResult {
   // Track if already closed
   const panelRoot = createRoot(panel);
 
+  let cleanupOutsideClick: (() => void) | null = null;
+
+  const attachOutsideClick = () => {
+    // Prevent duplicate listeners
+    cleanupOutsideClick?.();
+    cleanupOutsideClick = setupOutsideClick([panel], closePanel);
+  };
+
   // Close function (use function declaration for hoisting)
   const closePanel = () => {
     if (!panel.classList.contains('sumpage-panel-open')) return;
 
-    cleanupOutsideClick();
+    cleanupOutsideClick?.();
     options.onClose?.();
 
     panel.classList.remove('sumpage-panel-open');
   };
 
   // Outside click handler
-  const cleanupOutsideClick = setupOutsideClick([panel], closePanel);
+  attachOutsideClick();
 
   // Render React app
   panelRoot.render(
@@ -68,14 +76,9 @@ export function createPanel(options: PanelOptions = {}): PanelResult {
 
   return {
     open: () => {
+      attachOutsideClick();
       panel.classList.add('sumpage-panel-open');
     },
     close: closePanel,
-    cleanup: () => {
-      // Event handlers are managed by React; no DOM listeners to remove here
-      cleanupOutsideClick();
-      panelRoot.unmount();
-      host.remove();
-    },
   };
 }

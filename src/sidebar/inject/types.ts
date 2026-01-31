@@ -10,7 +10,6 @@ export interface DragHandlers {
 }
 
 export interface ToggleButtonHandlers {
-  onPositionChange: (pos: Position) => void;
   onClick: () => void;
 }
 
@@ -21,5 +20,4 @@ export interface PanelOptions {
 export interface PanelResult {
   close: () => void;
   open: () => void;
-  cleanup: () => void;
 }

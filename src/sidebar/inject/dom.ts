@@ -11,7 +11,7 @@ export const injectStyle = (
 export const createElement = <E extends HTMLElement>(
   tagName: string,
   props: Partial<HTMLElement>,
-  parent: HTMLElement | ShadowRoot
+  parent?: HTMLElement | ShadowRoot
 ) => {
   const element = document.createElement(tagName);
   Object.assign(element, props);
