@@ -7,6 +7,16 @@ import { createElement, buildToggleButtonIcon } from '../dom';
 const DEFAULT_POSITION: Position = { right: 24, bottom: 24 };
 const DRAG_CLICK_SLOP_PX = 5;
 
+type Viewport = { width: number; height: number };
+
+interface PositionControllerOptions {
+  defaultPosition?: Position;
+  dragClickSlopPx?: number;
+  getViewport?: () => Viewport;
+  readPosition?: () => Promise<Position | null>;
+  writePosition?: (pos: Position) => void;
+}
+
 interface PositionController {
   init: () => void;
   dragHandlers: {
@@ -20,17 +30,35 @@ interface PositionController {
 
 function createButtonPositionController(
   button: HTMLButtonElement,
-  handlers: ToggleButtonHandlers
+  handlers: ToggleButtonHandlers,
+  options: PositionControllerOptions = {}
 ): PositionController {
-  let position: Position = { ...DEFAULT_POSITION };
+  const {
+    defaultPosition = DEFAULT_POSITION,
+    dragClickSlopPx = DRAG_CLICK_SLOP_PX,
+    getViewport = () => ({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }),
+    readPosition = loadPosition,
+    writePosition = savePosition,
+  } = options;
+
+  let position: Position = { ...defaultPosition };
   let dragOrigin: Position | null = null;
   let accumulatedDelta = { x: 0, y: 0 };
   let suppressClick = false;
 
+  const renderPosition = (pos: Position) => {
+    button.style.right = pos.right + 'px';
+    button.style.bottom = pos.bottom + 'px';
+  };
+
   const clampToViewport = (pos: Position): Position => {
     const rect = button.getBoundingClientRect();
-    const maxRight = Math.max(window.innerWidth - rect.width, 0);
-    const maxBottom = Math.max(window.innerHeight - rect.height, 0);
+    const { width, height } = getViewport();
+    const maxRight = Math.max(width - rect.width, 0);
+    const maxBottom = Math.max(height - rect.height, 0);
 
     return {
       right: Math.min(Math.max(pos.right, 0), maxRight),
@@ -46,14 +74,22 @@ function createButtonPositionController(
     const clamped = clampToViewport(next);
 
     position = clamped;
-    button.style.right = clamped.right + 'px';
-    button.style.bottom = clamped.bottom + 'px';
+    renderPosition(clamped);
 
     if (persist) {
-      savePosition(clamped);
+      writePosition(clamped);
     }
 
     return clamped;
+  };
+
+  const handleResize = () => {
+    const prev = position;
+    const clamped = clampToViewport(prev);
+    if (clamped.right === prev.right && clamped.bottom === prev.bottom) return;
+    position = clamped;
+    renderPosition(clamped);
+    writePosition(clamped);
   };
 
   const resetDragTracking = () => {
@@ -66,13 +102,16 @@ function createButtonPositionController(
     applyPosition(position);
 
     // Initialize position from storage.
-    loadPosition().then((saved) => {
+    readPosition().then((saved) => {
       if (!saved) return;
       const applied = applyPosition(saved);
       if (applied.right !== saved.right || applied.bottom !== saved.bottom) {
-        savePosition(applied);
+        writePosition(applied);
       }
     });
+
+    // Keep button in viewport on resize
+    window.addEventListener('resize', handleResize);
   };
 
   const dragHandlers = {
@@ -94,8 +133,8 @@ function createButtonPositionController(
 
       if (
         !suppressClick &&
-        (Math.abs(accumulatedDelta.x) > DRAG_CLICK_SLOP_PX ||
-          Math.abs(accumulatedDelta.y) > DRAG_CLICK_SLOP_PX)
+        (Math.abs(accumulatedDelta.x) > dragClickSlopPx ||
+          Math.abs(accumulatedDelta.y) > dragClickSlopPx)
       ) {
         suppressClick = true;
       }
@@ -139,7 +178,10 @@ function createButtonPositionController(
   };
 }
 
-export function createToggleButton(handlers: ToggleButtonHandlers) {
+export function createToggleButton(
+  handlers: ToggleButtonHandlers,
+  options?: PositionControllerOptions
+) {
   const button = createElement<HTMLButtonElement>('button', {
     id: 'sumpage-toggle-btn',
     className: 'sumpage-toggle-btn',
@@ -147,10 +189,14 @@ export function createToggleButton(handlers: ToggleButtonHandlers) {
   });
   button.appendChild(buildToggleButtonIcon());
 
-  const positionController = createButtonPositionController(button, handlers);
+  const positionController = createButtonPositionController(
+    button,
+    handlers,
+    options
+  );
+  positionController.init();
   button.addEventListener('click', positionController.handleClick);
   setupDragging(button, positionController.dragHandlers);
-  positionController.init();
 
   return {
     element: button,
@@ -158,3 +204,5 @@ export function createToggleButton(handlers: ToggleButtonHandlers) {
     position: positionController.getPosition(),
   };
 }
+
+export type { PositionControllerOptions };

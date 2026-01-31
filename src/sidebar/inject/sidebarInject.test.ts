@@ -3,6 +3,8 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 // Stub requestAnimationFrame for jsdom
 const originalRaf = globalThis.requestAnimationFrame;
 const originalCancelRaf = globalThis.cancelAnimationFrame;
+const originalInnerWidth = window.innerWidth;
+const originalInnerHeight = window.innerHeight;
 
 const mockChrome = {
   storage: {
@@ -86,6 +88,45 @@ describe('sidebar toggle button', () => {
     expect(panel.classList.contains('sumpage-panel-open')).toBe(true);
   });
 
+  it('reclamps into viewport on window resize', async () => {
+    // Mock stored position far off-screen
+    vi.doMock('./toggle-button/positionStorage', () => ({
+      loadPosition: () =>
+        Promise.resolve({
+          right: 1200,
+          bottom: 1200,
+        }),
+      savePosition: vi.fn(),
+    }));
+
+    const { injectSidebar } = await import('./sidebarInject');
+
+    injectSidebar();
+    await vi.runAllTimersAsync();
+
+    // Shrink viewport
+    Object.defineProperty(window, 'innerWidth', {
+      value: 320,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      value: 320,
+      configurable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    const toggleHost = document.getElementById('sumpage-sidebar-button-host')!;
+    const toggleBtn = toggleHost.shadowRoot!.querySelector(
+      '#sumpage-toggle-btn'
+    ) as HTMLButtonElement;
+
+    const right = parseInt(toggleBtn.style.right, 10);
+    const bottom = parseInt(toggleBtn.style.bottom, 10);
+
+    expect(right).toBeLessThanOrEqual(320);
+    expect(bottom).toBeLessThanOrEqual(320);
+  });
+
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
@@ -94,5 +135,13 @@ describe('sidebar toggle button', () => {
     (globalThis as unknown as { chrome?: unknown }).chrome = undefined;
     globalThis.requestAnimationFrame = originalRaf;
     globalThis.cancelAnimationFrame = originalCancelRaf;
+    Object.defineProperty(window, 'innerWidth', {
+      value: originalInnerWidth,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      value: originalInnerHeight,
+      configurable: true,
+    });
   });
 });
