@@ -15,6 +15,7 @@ import {
 } from '../ui';
 import * as S from './styles';
 import { FormControl, InputLabel, Select } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { PROVIDERS, PROVIDER_DEFAULTS } from './constants';
 
 interface ProviderConfigProps {
@@ -38,7 +39,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const activeProviderType = globalSettings.settings.providerType;
   const [selectedProviderType, setSelectedProviderType] =
@@ -76,13 +77,11 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     loadConfig();
   }, [selectedProviderType]);
 
-  const handleProviderSelect = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleProviderSelect = (event: SelectChangeEvent<string>) => {
     const provider = event.target.value as ProviderType;
     setSelectedProviderType(provider);
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
   };
 
   const handleInputChange =
@@ -115,6 +114,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
   const handleSave = async () => {
     setError(null);
+    setSuccessMessage(null);
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -125,6 +125,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
 
     setIsLoading(true);
     try {
+      const hadExistingConfig = Boolean(existingConfig);
       await storage.saveConfig(selectedProviderType, {
         baseUrl: formData.baseUrl.trim(),
         apiKey: formData.apiKey.trim(),
@@ -132,10 +133,12 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         maxTokens: parseInt(formData.maxTokens, 10),
         temperature: parseFloat(formData.temperature),
       });
-      setSuccess(true);
+      setSuccessMessage(
+        hadExistingConfig ? 'Configuration updated!' : 'Configuration saved!'
+      );
       setExistingConfig(await storage.getConfig(selectedProviderType));
       setTimeout(() => {
-        setSuccess(false);
+        setSuccessMessage(null);
         onComplete?.();
       }, 1000);
     } catch (err) {
@@ -147,16 +150,15 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     }
   };
 
-  const handleDelete = async () => {
+  const handleClear = async () => {
     if (!selectedProviderType) return;
 
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
     setIsLoading(true);
     try {
       await storage.deleteConfig(selectedProviderType);
       setExistingConfig(null);
-      // Reset to defaults
       const defaults = PROVIDER_DEFAULTS[selectedProviderType];
       setFormData({
         baseUrl: defaults.baseUrl,
@@ -165,11 +167,11 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         maxTokens: '4000',
         temperature: '0.7',
       });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 1000);
+      setSuccessMessage('Configuration reset to defaults');
+      setTimeout(() => setSuccessMessage(null), 1000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to delete configuration'
+        err instanceof Error ? err.message : 'Failed to clear configuration'
       );
     } finally {
       setIsLoading(false);
@@ -286,13 +288,9 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
               )}
 
               {/* Success Message */}
-              {success && (
+              {successMessage && (
                 <Alert variant='success'>
-                  <AlertDescription>
-                    {existingConfig
-                      ? 'Configuration updated!'
-                      : 'Configuration saved!'}
-                  </AlertDescription>
+                  <AlertDescription>{successMessage}</AlertDescription>
                 </Alert>
               )}
 
@@ -306,14 +304,14 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                 >
                   {isLoading ? 'Saving...' : existingConfig ? 'Update' : 'Save'}
                 </Button>
-                {existingConfig && (
+                {selectedProviderType && (
                   <Button
-                    onClick={handleDelete}
+                    onClick={handleClear}
                     disabled={isLoading}
-                    variant='destructive'
+                    variant='outline'
                     size='default'
                   >
-                    Delete
+                    Clear
                   </Button>
                 )}
               </S.ButtonRow>
