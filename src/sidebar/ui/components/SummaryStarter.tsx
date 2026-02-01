@@ -38,7 +38,7 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   const { showSettingPage } = useGlobalUiState();
 
   const [selectedProvider, setSelectedProvider] = useState(
-    providerConfigs.selectedProvider
+    globalSettings.settings.providerType
   );
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(
     promptTemplates.selectedPromptId
@@ -46,14 +46,6 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
   const [promptText, setPromptText] = useState<string>(
     DEFAULT_PROMPT_TEMPLATE.template
   );
-
-  // Sync provider selection from store
-  useEffect(() => {
-    // Only hydrate from store when local state is empty to avoid overwriting user changes
-    if (!selectedProvider && providerConfigs.selectedProvider) {
-      setSelectedProvider(providerConfigs.selectedProvider);
-    }
-  }, [providerConfigs.selectedProvider, selectedProvider]);
 
   // Sync prompt selection from store
   useEffect(() => {

@@ -129,9 +129,3 @@ export async function getConfiguredProviders(): Promise<ProviderType[]> {
     .filter(([, config]) => config?.apiKey && config?.baseUrl)
     .map(([provider]) => provider as ProviderType);
 }
-
-// Initialize provider configs storage
-export async function initialize(): Promise<void> {
-  if (!isChromeStorageAvailable()) return;
-  // No default configs - user must add their own
-}

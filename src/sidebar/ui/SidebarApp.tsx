@@ -12,6 +12,7 @@ import { ProviderConfig } from './components/provider/ProviderConfig';
 import { SummaryStarter } from './components/SummaryStarter';
 import { PanelHeader } from './components/PanelHeader';
 import { PromptTemplatesManager } from './components/PromptTemplatesManager';
+import { ProviderType } from './models';
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -37,18 +38,16 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
 
       await providerConfigs.load();
 
-      const configured = await providerConfigs.checkConfiguration();
-      if (!configured) {
+      if (!providerConfigs.isAnyConfigured) {
         console.log('Provider not configured. Prompting user to configure.');
         showSettingPage();
       } else {
-        if (
-          !globalSettings.settings.providerType &&
-          providerConfigs.selectedProvider
-        ) {
-          const config =
-            providerConfigs.configs[providerConfigs.selectedProvider];
-          globalSettings.update({ providerType: config.provider });
+        // Auto select the first provider
+        if (!globalSettings.settings.providerType) {
+          const firstProvider = Object.keys(providerConfigs.configs)[0];
+          globalSettings.update({
+            providerType: firstProvider as ProviderType,
+          });
         }
       }
 

@@ -5,82 +5,77 @@
 import { create } from 'zustand';
 import type { ProviderConfig, ProviderType } from '../models';
 import * as storage from '../storages/providerConfigStorage';
+import { parseErrorMessage } from '../../../utils/error';
 
+// TODO: `loading` and `error` should be in a separate state for each storage operation
 interface State {
-  configs: Record<ProviderType, ProviderConfig>;
-  selectedProvider: ProviderType | null;
-  isConfigured: boolean;
+  // Loading state during storage operations
   isLoading: boolean;
+  // Error message during storage operations
   error: string | null;
+  // All provdier configs
+  configs: Record<ProviderType, ProviderConfig>;
+  // Is any provider configured
+  isAnyConfigured: boolean;
 }
 
 interface Actions {
+  // Load provider configs from storage
   load: () => Promise<void>;
-  initialize: () => Promise<void>;
-  saveConfig: (provider: ProviderType, config: Omit<ProviderConfig, 'id' | 'provider'>) => Promise<void>;
-  deleteConfig: (provider: ProviderType) => Promise<void>;
-  clearConfigs: () => Promise<void>;
-  selectProvider: (provider: ProviderType | null) => void;
-  checkConfiguration: () => Promise<boolean>;
   clearError: () => void;
+  saveConfig: (
+    providerType: ProviderType,
+    config: Omit<ProviderConfig, 'id' | 'provider'>
+  ) => Promise<void>;
+  deleteConfig: (providerType: ProviderType) => Promise<void>;
+  clearConfigs: () => Promise<void>;
 }
 
-export const useProviderConfigs = create<State & Actions>((set, get) => ({
-  configs: {} as Record<ProviderType, ProviderConfig>,
-  selectedProvider: null,
-  isConfigured: false,
+export const useProviderConfigs = create<State & Actions>((set) => ({
   isLoading: false,
   error: null,
+
+  configs: {} as Record<ProviderType, ProviderConfig>,
+  isAnyConfigured: false,
 
   load: async () => {
     set({ isLoading: true, error: null });
     try {
       const configs = await storage.getConfigs();
-      const isConfigured = await storage.isAnyConfigured();
-      const configuredProviders = await storage.getConfiguredProviders();
-      const selectedProvider = configuredProviders.length > 0 ? configuredProviders[0] : null;
-      set({ configs, isConfigured, selectedProvider, isLoading: false });
-    } catch {
-      set({ error: 'Failed to load configs', isLoading: false });
+      const isAnyConfigured = await storage.isAnyConfigured();
+      set({ configs, isAnyConfigured, isLoading: false });
+    } catch (error: any) {
+      const errMsg = parseErrorMessage(error) || 'Failed to load configs';
+      set({ error: errMsg, isLoading: false });
+      throw new Error(errMsg);
     }
   },
 
-  initialize: async () => {
+  saveConfig: async (providerType, config) => {
     set({ isLoading: true, error: null });
     try {
-      await storage.initialize();
-      await get().load();
-    } catch {
-      set({ error: 'Failed to initialize', isLoading: false });
-    }
-  },
-
-  saveConfig: async (provider, config) => {
-    set({ isLoading: true, error: null });
-    try {
-      await storage.saveConfig(provider, config);
+      await storage.saveConfig(providerType, config);
       const configs = await storage.getConfigs();
-      const isConfigured = await storage.isAnyConfigured();
-      set({ configs, isConfigured, isLoading: false });
-    } catch {
-      set({ error: 'Failed to save config', isLoading: false });
-      throw new Error('Failed to save config');
+      const isAnyConfigured = await storage.isAnyConfigured();
+      set({ configs, isAnyConfigured, isLoading: false });
+    } catch (error: any) {
+      const errMsg = parseErrorMessage(error) || 'Failed to save config';
+      set({ error: errMsg, isLoading: false });
+      throw new Error(errMsg);
     }
   },
 
-  deleteConfig: async (provider) => {
+  deleteConfig: async (providerType) => {
     set({ isLoading: true, error: null });
     try {
-      await storage.deleteConfig(provider);
+      await storage.deleteConfig(providerType);
       const configs = await storage.getConfigs();
-      const isConfigured = await storage.isAnyConfigured();
-      const selectedProvider = get().selectedProvider === provider
-        ? null
-        : get().selectedProvider;
-      set({ configs, isConfigured, selectedProvider, isLoading: false });
-    } catch {
-      set({ error: 'Failed to delete config', isLoading: false });
-      throw new Error('Failed to delete config');
+      const isAnyConfigured = await storage.isAnyConfigured();
+      set({ configs, isAnyConfigured, isLoading: false });
+    } catch (error: any) {
+      const errMsg = parseErrorMessage(error) || 'Failed to delete config';
+      set({ error: errMsg, isLoading: false });
+      throw new Error(errMsg);
     }
   },
 
@@ -88,21 +83,16 @@ export const useProviderConfigs = create<State & Actions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await storage.clearConfigs();
-      set({ configs: {} as Record<ProviderType, ProviderConfig>, isConfigured: false, selectedProvider: null, isLoading: false });
-    } catch {
-      set({ error: 'Failed to clear configs', isLoading: false });
-      throw new Error('Failed to clear configs');
+      set({
+        configs: {} as Record<ProviderType, ProviderConfig>,
+        isAnyConfigured: false,
+        isLoading: false,
+      });
+    } catch (error: any) {
+      const errMsg = parseErrorMessage(error) || 'Failed to clear configs';
+      set({ error: errMsg, isLoading: false });
+      throw new Error(errMsg);
     }
-  },
-
-  selectProvider: (provider) => {
-    set({ selectedProvider: provider });
-  },
-
-  checkConfiguration: async () => {
-    const configured = await storage.isAnyConfigured();
-    set({ isConfigured: configured });
-    return configured;
   },
 
   clearError: () => set({ error: null }),

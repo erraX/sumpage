@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ProviderConfig, ProviderType } from '../../models';
 import * as storage from '../../storages/providerConfigStorage';
-import { useGlobalSettings, useProviderConfigs } from '../../stores';
+import { useGlobalSettings } from '../../stores';
 import {
   Button,
   Input,
@@ -23,14 +23,11 @@ interface ProviderConfigProps {
 
 export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const globalSettings = useGlobalSettings();
-  const providerConfigs = useProviderConfigs();
 
-  const [selectedProvider, setSelectedProvider] = useState<ProviderType | null>(
-    globalSettings.settings.providerType || null
-  );
   const [existingConfig, setExistingConfig] = useState<ProviderConfig | null>(
     null
   );
+
   const [formData, setFormData] = useState({
     baseUrl: '',
     apiKey: '',
@@ -43,21 +40,16 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Hydrate selected provider from store/global settings without overwriting manual choice
-  useEffect(() => {
-    const providerToSelect =
-      globalSettings.settings.providerType || providerConfigs.selectedProvider;
-    if (!selectedProvider && providerToSelect) {
-      setSelectedProvider(providerToSelect);
-    }
-  }, [globalSettings.settings.providerType, providerConfigs.selectedProvider, selectedProvider]);
+  const activeProviderType = globalSettings.settings.providerType;
+  const [selectedProviderType, setSelectedProviderType] =
+    useState<ProviderType | null>(activeProviderType);
 
   // Load config when provider changes
   useEffect(() => {
     const loadConfig = async () => {
-      if (!selectedProvider) return;
+      if (!selectedProviderType) return;
 
-      const config = await storage.getConfig(selectedProvider);
+      const config = await storage.getConfig(selectedProviderType);
       setExistingConfig(config);
 
       if (config) {
@@ -70,7 +62,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         });
       } else {
         // Set defaults for new provider
-        const defaults = PROVIDER_DEFAULTS[selectedProvider];
+        const defaults = PROVIDER_DEFAULTS[selectedProviderType];
         setFormData({
           baseUrl: defaults.baseUrl,
           apiKey: '',
@@ -82,13 +74,13 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     };
 
     loadConfig();
-  }, [selectedProvider]);
+  }, [selectedProviderType]);
 
   const handleProviderSelect = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
     const provider = event.target.value as ProviderType;
-    setSelectedProvider(provider);
+    setSelectedProviderType(provider);
     setError(null);
     setSuccess(false);
   };
@@ -129,12 +121,11 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
       return;
     }
 
-    if (!selectedProvider) return;
+    if (!selectedProviderType) return;
 
     setIsLoading(true);
     try {
-      await globalSettings.update({ providerType: selectedProvider });
-      await storage.saveConfig(selectedProvider, {
+      await storage.saveConfig(selectedProviderType, {
         baseUrl: formData.baseUrl.trim(),
         apiKey: formData.apiKey.trim(),
         model: formData.model.trim(),
@@ -142,7 +133,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
         temperature: parseFloat(formData.temperature),
       });
       setSuccess(true);
-      setExistingConfig(await storage.getConfig(selectedProvider));
+      setExistingConfig(await storage.getConfig(selectedProviderType));
       setTimeout(() => {
         setSuccess(false);
         onComplete?.();
@@ -157,16 +148,16 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   };
 
   const handleDelete = async () => {
-    if (!selectedProvider) return;
+    if (!selectedProviderType) return;
 
     setError(null);
     setSuccess(false);
     setIsLoading(true);
     try {
-      await storage.deleteConfig(selectedProvider);
+      await storage.deleteConfig(selectedProviderType);
       setExistingConfig(null);
       // Reset to defaults
-      const defaults = PROVIDER_DEFAULTS[selectedProvider];
+      const defaults = PROVIDER_DEFAULTS[selectedProviderType];
       setFormData({
         baseUrl: defaults.baseUrl,
         apiKey: '',
@@ -200,7 +191,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
                 native
                 labelId='provider-select'
                 label='Choose provider'
-                value={selectedProvider ?? ''}
+                value={selectedProviderType ?? ''}
                 onChange={handleProviderSelect}
                 inputProps={{ 'data-testid': 'provider-select-native' }}
               >
@@ -216,7 +207,7 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
             </FormControl>
           </S.ProviderTabsContainer>
 
-          {selectedProvider ? (
+          {selectedProviderType ? (
             <>
               {/* Base URL */}
               <S.ProviderFormGroup>
