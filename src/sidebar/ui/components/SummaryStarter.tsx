@@ -3,7 +3,6 @@ import {
   Box,
   FormControl,
   InputLabel,
-  MenuItem,
   Select,
   type SelectChangeEvent,
   Stack,
@@ -50,20 +49,15 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
 
   // Sync provider selection from store
   useEffect(() => {
-    if (
-      providerConfigs.selectedProvider &&
-      providerConfigs.selectedProvider !== selectedProvider
-    ) {
+    // Only hydrate from store when local state is empty to avoid overwriting user changes
+    if (!selectedProvider && providerConfigs.selectedProvider) {
       setSelectedProvider(providerConfigs.selectedProvider);
     }
   }, [providerConfigs.selectedProvider, selectedProvider]);
 
   // Sync prompt selection from store
   useEffect(() => {
-    if (
-      promptTemplates.selectedPromptId &&
-      promptTemplates.selectedPromptId !== selectedPrompt
-    ) {
+    if (!selectedPrompt && promptTemplates.selectedPromptId) {
       setSelectedPrompt(promptTemplates.selectedPromptId);
     }
   }, [promptTemplates.selectedPromptId, selectedPrompt]);
@@ -151,18 +145,16 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
                 value={selectedProvider ?? ''}
                 label={isReady ? 'Select provider' : 'No providers configured'}
                 onChange={handleProviderChange}
+                native
                 displayEmpty
-                MenuProps={{ disablePortal: true, disableScrollLock: true }}
               >
-                {!isReady && (
-                  <MenuItem value="" disabled>
-                    No providers configured
-                  </MenuItem>
-                )}
+                <option aria-label="None" value="" disabled={!isReady}>
+                  {isReady ? 'Select provider' : 'No providers configured'}
+                </option>
                 {availableProviders.map((cfg) => (
-                  <MenuItem key={cfg.provider} value={cfg.provider}>
+                  <option key={cfg.provider} value={cfg.provider}>
                     {cfg.provider}
-                  </MenuItem>
+                  </option>
                 ))}
               </Select>
             </FormControl>
@@ -182,13 +174,13 @@ export function SummaryStarter({ onOpenSettings }: SummaryStarterProps) {
                 value={selectedPrompt ?? 'default'}
                 label="Prompt"
                 onChange={handlePromptChange}
-                MenuProps={{ disablePortal: true, disableScrollLock: true }}
+                native
               >
-                <MenuItem value='default'>Default prompt</MenuItem>
+                <option value='default'>Default prompt</option>
                 {promptTemplates.templates.map((tpl) => (
-                  <MenuItem key={tpl.id} value={tpl.id}>
+                  <option key={tpl.id} value={tpl.id}>
                     {tpl.name}
-                  </MenuItem>
+                  </option>
                 ))}
               </Select>
             </FormControl>

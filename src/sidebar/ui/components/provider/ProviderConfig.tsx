@@ -14,41 +14,8 @@ import {
   AlertDescription,
 } from '../ui';
 import * as S from './styles';
-import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
-
-const PROVIDERS: { type: ProviderType; label: string }[] = [
-  { type: 'deepseek', label: 'DeepSeek' },
-  { type: 'openai', label: 'OpenAI' },
-  { type: 'anthropic', label: 'Anthropic' },
-  { type: 'minimax', label: 'MiniMax' },
-  { type: 'gemini', label: 'Gemini' },
-];
-
-const PROVIDER_DEFAULTS: Record<
-  ProviderType,
-  { baseUrl: string; model: string }
-> = {
-  deepseek: {
-    baseUrl: 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat',
-  },
-  openai: {
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4',
-  },
-  anthropic: {
-    baseUrl: 'https://api.anthropic.com/v1',
-    model: 'claude-sonnet-4-20250506',
-  },
-  minimax: {
-    baseUrl: 'https://api.minimax.chat/v1',
-    model: 'abab6.5s-chat',
-  },
-  gemini: {
-    baseUrl: 'https://generativelanguage.googleapis.com/v1',
-    model: 'gemini-2.0-flash-exp',
-  },
-};
+import { FormControl, InputLabel, Select } from '@mui/material';
+import { PROVIDERS, PROVIDER_DEFAULTS } from './constants';
 
 interface ProviderConfigProps {
   onComplete?: () => void;
@@ -75,15 +42,6 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  // Auto-select provider on mount
-  useEffect(() => {
-    const providerToSelect =
-      globalSettings.settings.providerType || providerConfigs.selectedProvider;
-    if (providerToSelect) {
-      setSelectedProvider(providerToSelect);
-    }
-  }, [globalSettings.settings.providerType, providerConfigs.selectedProvider]);
 
   // Load config when provider changes
   useEffect(() => {
@@ -117,7 +75,9 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
     loadConfig();
   }, [selectedProvider]);
 
-  const handleProviderSelect = (event: SelectChangeEvent<string>) => {
+  const handleProviderSelect = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const provider = event.target.value as ProviderType;
     setSelectedProvider(provider);
     setError(null);
@@ -228,16 +188,20 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
             <FormControl fullWidth size='small'>
               <InputLabel id='provider-select'>Choose provider</InputLabel>
               <Select
+                native
                 labelId='provider-select'
                 label='Choose provider'
                 value={selectedProvider ?? ''}
                 onChange={handleProviderSelect}
-                MenuProps={{ disablePortal: true, disableScrollLock: true }}
+                inputProps={{ 'data-testid': 'provider-select-native' }}
               >
+                <option aria-label='None' value='' disabled>
+                  Select a provider
+                </option>
                 {PROVIDERS.map(({ type, label }) => (
-                  <MenuItem key={type} value={type}>
+                  <option key={type} value={type}>
                     {label}
-                  </MenuItem>
+                  </option>
                 ))}
               </Select>
             </FormControl>
