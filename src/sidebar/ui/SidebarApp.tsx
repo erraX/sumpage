@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Stack } from '@mui/material';
 import { Host, PanelContent } from './components/styles';
 import { DEFAULT_PROMPT_TEMPLATE } from './constants';
 import {
@@ -10,6 +11,7 @@ import {
 import { ProviderConfig } from './components/provider/ProviderConfig';
 import { SummaryStarter } from './components/SummaryStarter';
 import { PanelHeader } from './components/PanelHeader';
+import { PromptTemplatesManager } from './components/PromptTemplatesManager';
 
 interface SidebarAppProps {
   onClose: () => void;
@@ -28,7 +30,6 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
     toggleSettingPage,
   } = useGlobalUiState();
 
-  // Initialize on mount (guarded so it only runs once even if dependencies change)
   useEffect(() => {
     const init = async () => {
       await globalSettings.initialize();
@@ -54,6 +55,7 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
       setIsInitingApp(false);
     };
     void init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -67,7 +69,10 @@ export function SidebarApp({ onClose }: SidebarAppProps) {
         <Host>
           {isInitingApp && <div>loading...</div>}
           {settingPageVisible && (
-            <ProviderConfig onComplete={hideSettingPage} />
+            <Stack spacing={2} sx={{ px: 1, pb: 2 }}>
+              <ProviderConfig onComplete={hideSettingPage} />
+              <PromptTemplatesManager />
+            </Stack>
           )}
           {!settingPageVisible && (
             <SummaryStarter onOpenSettings={showSettingPage} />

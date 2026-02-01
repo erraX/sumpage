@@ -43,6 +43,15 @@ export function ProviderConfig({ onComplete }: ProviderConfigProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Hydrate selected provider from store/global settings without overwriting manual choice
+  useEffect(() => {
+    const providerToSelect =
+      globalSettings.settings.providerType || providerConfigs.selectedProvider;
+    if (!selectedProvider && providerToSelect) {
+      setSelectedProvider(providerToSelect);
+    }
+  }, [globalSettings.settings.providerType, providerConfigs.selectedProvider, selectedProvider]);
+
   // Load config when provider changes
   useEffect(() => {
     const loadConfig = async () => {
